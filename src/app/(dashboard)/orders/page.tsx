@@ -1,0 +1,106 @@
+import { Card } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { OrderForm } from "@/components/forms/order-form";
+import { requireAuth } from "@/lib/auth/guards";
+import { orderRepository } from "@/lib/repositories/order-repository";
+import { prisma } from "@/lib/db/prisma";
+import { formatCurrency, toNumber } from "@/lib/utils";
+
+export default async function OrdersPage({
+  searchParams
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const session = await requireAuth();
+  const params = await searchParams;
+  const page = Number(params.page ?? "1");
+
+  const [orders, customers, garmentTypes, profiles] = await Promise.all([
+    orderRepository.list(session.tenantId, page, 10),
+    prisma.customer.findMany({ where: { tenantId: session.tenantId }, orderBy: { fullName: "asc" } }),
+    prisma.garmentType.findMany({ where: { tenantId: session.tenantId }, orderBy: { name: "asc" } }),
+    prisma.measurementProfile.findMany({ where: { tenantId: session.tenantId }, include: { customer: true } })
+  ]);
+
+  const pageCount = Math.max(1, Math.ceil(orders.total / 10));
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-semibold">Orders</h1>
+          <p className="text-sm text-[var(--muted)]">Create and manage production workflow orders</p>
+        </div>
+        <a
+          href="/api/exports/orders.csv"
+          className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm"
+        >
+          Export CSV
+        </a>
+      </div>
+
+      <Card>
+        <OrderForm
+          customers={customers.map((customer) => ({
+            id: customer.id,
+            label: `${customer.customerNumber} - ${customer.fullName}`
+          }))}
+          garmentTypes={garmentTypes.map((garmentType) => ({ id: garmentType.id, label: garmentType.name }))}
+          profiles={profiles.map((profile) => ({
+            id: profile.id,
+            customerId: profile.customerId,
+            label: `${profile.name} (${profile.customer.fullName})`
+          }))}
+        />
+      </Card>
+
+      <DataTable
+        headers={["Order #", "Customer", "Status", "Priority", "Total", "Paid", "Balance", "Delivery"]}
+      >
+        {orders.rows.map((order) => {
+          const total =
+            order.items.reduce((sum, item) => sum + item.quantity * toNumber(item.unitPrice), 0) -
+            toNumber(order.discountAmount);
+          const paid = order.payments.reduce((sum, payment) => sum + toNumber(payment.amount), 0);
+          const balance = total - paid;
+
+          return (
+            <tr key={order.id} className="border-t border-[var(--border)] transition-colors hover:bg-[var(--bg)]">
+              <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-medium">{order.orderNumber}</td>
+              <td className="px-4 py-3 font-medium">{order.customer.fullName}</td>
+              <td className="px-4 py-3">
+                <Badge label={order.status} />
+              </td>
+              <td className="px-4 py-3">
+                <Badge label={order.priority} />
+              </td>
+              <td className="px-4 py-3">{formatCurrency(total)}</td>
+              <td className="px-4 py-3 text-[var(--success)]">{formatCurrency(paid)}</td>
+              <td className={`px-4 py-3 font-semibold ${balance > 0 ? "text-[var(--primary)]" : "text-[var(--success)]"}`}>
+                {formatCurrency(balance)}
+              </td>
+              <td className="whitespace-nowrap px-4 py-3 text-[var(--muted)]">
+                {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : "—"}
+              </td>
+            </tr>
+          );
+        })}
+      </DataTable>
+
+      <div className="flex items-center justify-between text-sm">
+        <p>
+          Page {page} of {pageCount}
+        </p>
+        <div className="flex gap-2">
+          <a className="rounded-lg border px-3 py-1" href={`/orders?page=${Math.max(1, page - 1)}`}>
+            Prev
+          </a>
+          <a className="rounded-lg border px-3 py-1" href={`/orders?page=${Math.min(pageCount, page + 1)}`}>
+            Next
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}

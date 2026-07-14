@@ -1,0 +1,470 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum OrderState {
+  PENDING
+  CUTTING
+  SEWING
+  FINISHING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethodCode {
+  CASH
+  CARD
+  BANK_TRANSFER
+  MOBILE_MONEY
+  OTHER
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+model Tenant {
+  id               String           @id @default(cuid())
+  businessName     String           @db.VarChar(150)
+  slug             String           @unique @db.VarChar(80)
+  ownerName        String?          @db.VarChar(150)
+  email            String?          @db.VarChar(190)
+  phone            String?          @db.VarChar(30)
+  address          String?          @db.VarChar(255)
+  logo             String?          @db.VarChar(255)
+  subscriptionPlan SubscriptionPlan @default(FREE)
+  status           TenantStatus     @default(ACTIVE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  users               User[]
+  customers           Customer[]
+  garmentTypes        GarmentType[]
+  measurementProfiles MeasurementProfile[]
+  measurements        Measurement[]
+  orders              Order[]
+  orderItems          OrderItem[]
+  paymentMethods      PaymentMethod[]
+  payments            Payment[]
+  activityLogs        ActivityLog[]
+  expenseCategories   ExpenseCategory[]
+  expenses            Expense[]
+  employees           Employee[]
+  salaries            Salary[]
+  suppliers           Supplier[]
+  productCategories   ProductCategory[]
+  products            Product[]
+  purchases           Purchase[]
+  purchaseItems       PurchaseItem[]
+  settings            Setting[]
+
+  @@index([status])
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  tenantId            String    @db.VarChar(36)
+  fullName            String    @db.VarChar(150)
+  email               String    @unique @db.VarChar(190)
+  passwordHash        String    @db.VarChar(255)
+  role                String    @default("admin") @db.VarChar(60)
+  permissions         Json?
+  notificationsSeenAt DateTime?
+  isActive            Boolean   @default(true)
+  isSuperAdmin        Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  activities ActivityLog[]
+  payments   Payment[]
+  expenses   Expense[]
+
+  @@index([tenantId, role])
+}
+
+model Customer {
+  id               String   @id @default(cuid())
+  tenantId         String   @db.VarChar(36)
+  customerNumber   String   @unique @db.VarChar(40)
+  fullName         String   @db.VarChar(150)
+  phone            String   @db.VarChar(30)
+  alternativePhone String?  @db.VarChar(30)
+  email            String?  @db.VarChar(190)
+  address          String?  @db.VarChar(255)
+  city             String?  @db.VarChar(120)
+  gender           Gender?
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  measurementProfiles MeasurementProfile[]
+  orders              Order[]
+  payments            Payment[]
+
+  @@index([tenantId, phone])
+  @@index([tenantId, fullName])
+  @@index([tenantId, createdAt])
+}
+
+model GarmentType {
+  id          String   @id @default(cuid())
+  tenantId    String   @db.VarChar(36)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  orderItems          OrderItem[]
+  measurementProfiles MeasurementProfile[]
+
+  @@unique([tenantId, name])
+}
+
+model MeasurementProfile {
+  id            String   @id @default(cuid())
+  tenantId      String   @db.VarChar(36)
+  customerId    String
+  garmentTypeId String
+  name          String   @db.VarChar(120)
+  notes         String?  @db.Text
+  measuredAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  customer    Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  garmentType GarmentType   @relation(fields: [garmentTypeId], references: [id], onDelete: Restrict)
+  fields      Measurement[]
+  orderItems  OrderItem[]
+
+  @@index([tenantId, customerId])
+}
+
+model Measurement {
+  id                   String   @id @default(cuid())
+  tenantId             String   @db.VarChar(36)
+  measurementProfileId String
+  fieldName            String   @db.VarChar(120)
+  fieldValue           String   @db.VarChar(120)
+  unit                 String?  @db.VarChar(20)
+  createdAt            DateTime @default(now())
+
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  measurementProfile MeasurementProfile @relation(fields: [measurementProfileId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, measurementProfileId])
+}
+
+model Order {
+  id                 String     @id @default(cuid())
+  tenantId           String     @db.VarChar(36)
+  orderNumber        String     @unique @db.VarChar(40)
+  customerId         String
+  orderDate          DateTime   @default(now())
+  deliveryDate       DateTime?
+  priority           Priority   @default(NORMAL)
+  status             OrderState @default(PENDING)
+  discountAmount     Decimal    @default(0) @db.Decimal(12, 2)
+  notes              String?    @db.Text
+  overpaymentAllowed Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  tenant   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  customer Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([tenantId, orderDate])
+  @@index([tenantId, status])
+  @@index([tenantId, customerId])
+}
+
+model OrderItem {
+  id                    String   @id @default(cuid())
+  tenantId              String   @db.VarChar(36)
+  orderId               String
+  garmentTypeId         String
+  measurementProfileId  String?
+  fabric                String?  @db.VarChar(120)
+  color                 String?  @db.VarChar(60)
+  quantity              Int      @default(1)
+  unitPrice             Decimal  @db.Decimal(12, 2)
+  tailoringInstructions String?  @db.Text
+  createdAt             DateTime @default(now())
+
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  order              Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  garmentType        GarmentType         @relation(fields: [garmentTypeId], references: [id], onDelete: Restrict)
+  measurementProfile MeasurementProfile? @relation(fields: [measurementProfileId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, orderId])
+}
+
+model PaymentMethod {
+  id        String            @id @default(cuid())
+  tenantId  String            @db.VarChar(36)
+  code      PaymentMethodCode
+  label     String            @db.VarChar(60)
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  payments Payment[]
+  expenses Expense[]
+
+  @@unique([tenantId, code])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  tenantId        String   @db.VarChar(36)
+  orderId         String
+  customerId      String
+  paymentMethodId String
+  receivedById    String?
+  amount          Decimal  @db.Decimal(12, 2)
+  paymentDate     DateTime @default(now())
+  referenceNo     String?  @db.VarChar(120)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  paymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  receivedBy    User?         @relation(fields: [receivedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, orderId])
+  @@index([tenantId, customerId])
+  @@index([tenantId, paymentDate])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  tenantId    String   @db.VarChar(36)
+  actorUserId String?
+  entityType  String   @db.VarChar(80)
+  entityId    String   @db.VarChar(64)
+  action      String   @db.VarChar(60)
+  message     String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  actor  User?  @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType, entityId])
+}
+
+model ExpenseCategory {
+  id          String   @id @default(cuid())
+  tenantId    String   @db.VarChar(36)
+  name        String   @db.VarChar(120)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  expenses Expense[]
+
+  @@unique([tenantId, name])
+}
+
+model Expense {
+  id              String   @id @default(cuid())
+  tenantId        String   @db.VarChar(36)
+  title           String   @db.VarChar(150)
+  categoryId      String?
+  amount          Decimal  @db.Decimal(12, 2)
+  expenseDate     DateTime @default(now())
+  paymentMethodId String?
+  createdById     String?
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  category      ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  paymentMethod PaymentMethod?   @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  createdBy     User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, expenseDate])
+  @@index([tenantId, title])
+  @@index([tenantId, categoryId])
+}
+
+model Employee {
+  id            String   @id @default(cuid())
+  tenantId      String   @db.VarChar(36)
+  fullName      String   @db.VarChar(150)
+  phone         String?  @db.VarChar(30)
+  position      String?  @db.VarChar(120)
+  monthlySalary Decimal  @db.Decimal(12, 2)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  salaries Salary[]
+
+  @@index([tenantId, fullName])
+}
+
+model Salary {
+  id          String   @id @default(cuid())
+  tenantId    String   @db.VarChar(36)
+  employeeId  String
+  amount      Decimal  @db.Decimal(12, 2)
+  paymentDate DateTime
+  month       Int
+  year        Int
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, paymentDate])
+  @@index([tenantId, employeeId])
+  @@index([tenantId, month, year])
+}
+
+model Supplier {
+  id           String   @id @default(cuid())
+  tenantId     String   @db.VarChar(36)
+  supplierName String   @db.VarChar(150)
+  phone        String?  @db.VarChar(30)
+  email        String?  @db.VarChar(190)
+  address      String?  @db.VarChar(255)
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  purchases Purchase[]
+  products  Product[]
+
+  @@index([tenantId, supplierName])
+}
+
+model ProductCategory {
+  id          String   @id @default(cuid())
+  tenantId    String   @db.VarChar(36)
+  name        String   @db.VarChar(120)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  products Product[]
+
+  @@unique([tenantId, name])
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  tenantId     String   @db.VarChar(36)
+  categoryId   String
+  supplierId   String?
+  name         String   @db.VarChar(150)
+  sku          String   @unique @db.VarChar(80)
+  costPrice    Decimal  @db.Decimal(12, 2)
+  sellingPrice Decimal  @db.Decimal(12, 2)
+  quantity     Int      @default(0)
+  minimumStock Int      @default(5)
+  imageUrl     String?  @db.VarChar(255)
+  unit         String?  @db.VarChar(30)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  category      ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  supplier      Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  purchaseItems PurchaseItem[]
+
+  @@index([tenantId, name])
+  @@index([tenantId, quantity])
+  @@index([tenantId, categoryId])
+}
+
+model Purchase {
+  id           String   @id @default(cuid())
+  tenantId     String   @db.VarChar(36)
+  supplierId   String
+  invoiceNo    String?  @db.VarChar(80)
+  purchaseDate DateTime @default(now())
+  total        Decimal  @db.Decimal(12, 2)
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  supplier Supplier       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items    PurchaseItem[]
+
+  @@index([tenantId, purchaseDate])
+  @@index([tenantId, supplierId])
+}
+
+model PurchaseItem {
+  id         String  @id @default(cuid())
+  tenantId   String  @db.VarChar(36)
+  purchaseId String
+  productId  String
+  quantity   Int
+  unitCost   Decimal @db.Decimal(12, 2)
+  subtotal   Decimal @db.Decimal(12, 2)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, purchaseId])
+  @@index([purchaseId])
+  @@index([productId])
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  tenantId  String   @db.VarChar(36)
+  key       String   @db.VarChar(120)
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, key])
+}

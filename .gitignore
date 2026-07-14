@@ -1,0 +1,18 @@
+node_modules
+.next
+out
+.env
+.env.local
+.env.*.local
+prisma/dev.db
+coverage
+*.log
+
+# build cache
+tsconfig.tsbuildinfo
+
+# local tooling config
+.claude/
+
+# runtime user uploads (logos are stored as data URLs in the DB; product images are runtime data)
+public/uploads/
