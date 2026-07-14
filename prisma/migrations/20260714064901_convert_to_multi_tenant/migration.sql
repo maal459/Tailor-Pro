@@ -1,87 +1,87 @@
 /*
   Warnings:
 
-  - Made the column `tenantId` on table `activitylog` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `customer` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `employee` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `expense` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `expensecategory` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `garmenttype` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `measurement` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `measurementprofile` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `order` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `orderitem` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `payment` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `paymentmethod` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `product` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `productcategory` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `purchase` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `ActivityLog` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Customer` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Employee` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Expense` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `ExpenseCategory` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `GarmentType` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Measurement` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `MeasurementProfile` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Order` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `OrderItem` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Payment` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `PaymentMethod` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Product` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `ProductCategory` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Purchase` required. This step will fail if there are existing NULL values in that column.
   - Added the required column `tenantId` to the `PurchaseItem` table without a default value. This is not possible if the table is not empty.
-  - Made the column `tenantId` on table `salary` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `setting` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `supplier` required. This step will fail if there are existing NULL values in that column.
-  - Made the column `tenantId` on table `user` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Salary` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Setting` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `Supplier` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `tenantId` on table `User` required. This step will fail if there are existing NULL values in that column.
 
 */
 -- AlterTable
-ALTER TABLE `activitylog` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `ActivityLog` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `customer` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Customer` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `employee` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Employee` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `expense` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Expense` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `expensecategory` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `ExpenseCategory` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `garmenttype` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `GarmentType` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `measurement` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Measurement` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `measurementprofile` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `MeasurementProfile` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `order` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Order` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `orderitem` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `OrderItem` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `payment` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Payment` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `paymentmethod` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `PaymentMethod` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `product` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Product` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `productcategory` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `ProductCategory` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `purchase` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Purchase` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `purchaseitem` ADD COLUMN `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `PurchaseItem` ADD COLUMN `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `salary` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Salary` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `setting` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Setting` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `supplier` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `Supplier` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- AlterTable
-ALTER TABLE `user` MODIFY `tenantId` VARCHAR(36) NOT NULL;
+ALTER TABLE `User` MODIFY `tenantId` VARCHAR(36) NOT NULL;
 
 -- CreateTable
 CREATE TABLE `Tenant` (
