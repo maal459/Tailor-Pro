@@ -28,10 +28,20 @@ export async function createSession(payload: SessionPayload) {
     .setExpirationTime("7d")
     .sign(getSecret());
 
+  // Secure cookies require HTTPS; browsers drop a Secure cookie sent over plain HTTP.
+  // Default to secure in production, but allow COOKIE_SECURE=false for an initial
+  // HTTP-only (bare IP) deployment. Set it back to secure once HTTPS is in place.
+  const cookieSecure =
+    process.env.COOKIE_SECURE === "false"
+      ? false
+      : process.env.COOKIE_SECURE === "true"
+        ? true
+        : process.env.NODE_ENV === "production";
+
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7
