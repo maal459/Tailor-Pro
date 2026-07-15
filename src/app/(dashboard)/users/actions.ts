@@ -6,6 +6,7 @@ import { requirePermission } from "@/lib/auth/guards";
 import { createUserSchema, updateUserSchema } from "@/lib/validators/user";
 import { prisma } from "@/lib/db/prisma";
 import { getPermissionsForRole } from "@/lib/auth/permissions";
+import { assertWithinPlanLimit } from "@/lib/billing/limits";
 
 function formDataToPermissions(formData: FormData) {
   return formData
@@ -29,6 +30,9 @@ export async function createUserAction(formData: FormData) {
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid user data");
   }
+
+  // Enforce the tenant's subscription plan cap on staff users.
+  await assertWithinPlanLimit(session.tenantId, "users");
 
   const permissions = parsed.data.permissions.length ? parsed.data.permissions : getPermissionsForRole(parsed.data.role);
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);

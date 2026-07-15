@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { format } from "date-fns";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { TenantForm } from "@/components/forms/tenant-form";
+import { SubscriptionPanel } from "@/components/forms/subscription-panel";
 import { requireSuperAdmin } from "@/lib/auth/guards";
 import { prismaUnsafe } from "@/lib/db/prisma";
 
@@ -41,6 +43,26 @@ export default async function EditTenantPage({
             address: tenant.address ?? "",
             subscriptionPlan: tenant.subscriptionPlan,
             status: tenant.status
+          }}
+        />
+      </Card>
+
+      <Card>
+        <div className="mb-4">
+          <p className="text-sm font-semibold">Billing &amp; subscription</p>
+          <p className="text-xs text-[var(--muted)]">
+            Plan is set above. Paid through{" "}
+            {tenant.currentPeriodEnd ? format(tenant.currentPeriodEnd, "dd MMM yyyy") : "—"}.
+          </p>
+        </div>
+        <SubscriptionPanel
+          tenantId={tenant.id}
+          plan={tenant.subscriptionPlan}
+          initial={{
+            billingCycle: tenant.billingCycle,
+            autoCollect: tenant.autoCollect,
+            gatewayProvider: tenant.gatewayProvider ?? "",
+            gatewayPayerRef: tenant.gatewayPayerRef ?? ""
           }}
         />
       </Card>

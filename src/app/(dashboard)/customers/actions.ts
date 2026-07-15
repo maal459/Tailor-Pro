@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth/guards";
 import { createCustomerSchema } from "@/lib/validators/customer";
 import { customerRepository } from "@/lib/repositories/customer-repository";
+import { assertWithinPlanLimit } from "@/lib/billing/limits";
 
 export async function createCustomerAction(formData: FormData) {
   const session = await requireAuth();
@@ -22,6 +23,9 @@ export async function createCustomerAction(formData: FormData) {
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid customer data");
   }
+
+  // Enforce the tenant's subscription plan cap on customers.
+  await assertWithinPlanLimit(session.tenantId, "customers");
 
   const timestamp = Date.now().toString().slice(-6);
   await customerRepository.create({

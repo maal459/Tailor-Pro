@@ -51,6 +51,29 @@ enum TenantStatus {
   CANCELLED
 }
 
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum SubscriptionPaymentMethod {
+  CASH
+  ZAAD
+  EDAHAB
+  BANK_TRANSFER
+  CARD
+  MANUAL
+  OTHER
+}
+
 model Tenant {
   id               String           @id @default(cuid())
   businessName     String           @db.VarChar(150)
@@ -62,6 +85,14 @@ model Tenant {
   logo             String?          @db.VarChar(255)
   subscriptionPlan SubscriptionPlan @default(FREE)
   status           TenantStatus     @default(ACTIVE)
+
+  // Platform billing state (how this business is charged for using Tailor Pro).
+  billingCycle     BillingCycle     @default(MONTHLY)
+  currentPeriodEnd DateTime? // when the current paid period ends / next invoice is due
+  autoCollect      Boolean          @default(false) // attempt automatic gateway charge on renewal
+  gatewayProvider  String?          @db.VarChar(20) // "ZAAD" | "EDAHAB" | null
+  gatewayPayerRef  String?          @db.VarChar(120) // payer wallet/phone the gateway charges
+
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -85,8 +116,75 @@ model Tenant {
   purchases           Purchase[]
   purchaseItems       PurchaseItem[]
   settings            Setting[]
+  subscriptionInvoices SubscriptionInvoice[]
+  subscriptionPayments SubscriptionPayment[]
 
   @@index([status])
+}
+
+/// Editable price book for the platform's subscription plans. One row per plan;
+/// the app falls back to code defaults (src/lib/billing/plans.ts) when a row is
+/// missing, so pricing is safe to edit in the UI without a redeploy.
+model PlanPrice {
+  id           String           @id @default(cuid())
+  plan         SubscriptionPlan @unique
+  monthlyPrice Decimal          @db.Decimal(10, 2)
+  yearlyPrice  Decimal          @db.Decimal(10, 2)
+  currency     String           @default("USD") @db.VarChar(3)
+  isActive     Boolean          @default(true)
+  updatedAt    DateTime         @updatedAt
+}
+
+/// A bill the platform issues to a tenant for one subscription period.
+/// Platform-level (queried across tenants), so it is NOT registered in the
+/// Prisma tenant guard — access it through prismaUnsafe.
+model SubscriptionInvoice {
+  id           String           @id @default(cuid())
+  tenantId     String           @db.VarChar(36)
+  plan         SubscriptionPlan
+  billingCycle BillingCycle
+  amount       Decimal          @db.Decimal(10, 2)
+  currency     String           @default("USD") @db.VarChar(3)
+  periodStart  DateTime
+  periodEnd    DateTime
+  dueDate      DateTime
+  status       InvoiceStatus    @default(PENDING)
+  issuedAt     DateTime         @default(now())
+  paidAt       DateTime?
+  notes        String?          @db.Text
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  tenant   Tenant                @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  payments SubscriptionPayment[]
+
+  @@index([tenantId, status])
+  @@index([status, dueDate])
+  @@index([tenantId, periodStart])
+}
+
+/// A subscription payment received from a tenant (manual or via a mobile-money
+/// gateway). `gatewayRef` holds the ZAAD/eDahab transaction id for reconciliation.
+model SubscriptionPayment {
+  id              String                    @id @default(cuid())
+  tenantId        String                    @db.VarChar(36)
+  invoiceId       String?
+  amount          Decimal                   @db.Decimal(10, 2)
+  currency        String                    @default("USD") @db.VarChar(3)
+  method          SubscriptionPaymentMethod @default(MANUAL)
+  gatewayProvider String?                   @db.VarChar(20)
+  gatewayRef      String?                   @db.VarChar(160)
+  paidAt          DateTime                  @default(now())
+  recordedBy      String?                   @db.VarChar(190) // super-admin email who logged it
+  notes           String?                   @db.Text
+  createdAt       DateTime                  @default(now())
+
+  tenant  Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  invoice SubscriptionInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, paidAt])
+  @@index([invoiceId])
+  @@index([gatewayRef])
 }
 
 model User {

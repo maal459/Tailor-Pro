@@ -15,6 +15,7 @@ import {
 import { productRepository } from "@/lib/repositories/product-repository";
 import { prisma } from "@/lib/db/prisma";
 import { logActivity } from "@/lib/activity-log";
+import { assertWithinPlanLimit } from "@/lib/billing/limits";
 
 function revalidateProductViews() {
   revalidatePath("/products");
@@ -65,6 +66,9 @@ export async function createProductAction(formData: FormData) {
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid product data");
   }
+
+  // Enforce the tenant's subscription plan cap on products.
+  await assertWithinPlanLimit(session.tenantId, "products");
 
   const imageUrl = await saveProductImage(formData.get("image"), session.tenantId);
 
