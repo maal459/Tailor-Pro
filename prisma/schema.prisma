@@ -74,6 +74,12 @@ enum SubscriptionPaymentMethod {
   OTHER
 }
 
+enum GatewayChargeStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 model Tenant {
   id               String           @id @default(cuid())
   businessName     String           @db.VarChar(150)
@@ -118,6 +124,7 @@ model Tenant {
   settings            Setting[]
   subscriptionInvoices SubscriptionInvoice[]
   subscriptionPayments SubscriptionPayment[]
+  gatewayCharges       GatewayCharge[]
 
   @@index([status])
 }
@@ -157,6 +164,7 @@ model SubscriptionInvoice {
 
   tenant   Tenant                @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   payments SubscriptionPayment[]
+  charges  GatewayCharge[]
 
   @@index([tenantId, status])
   @@index([status, dueDate])
@@ -185,6 +193,34 @@ model SubscriptionPayment {
   @@index([tenantId, paidAt])
   @@index([invoiceId])
   @@index([gatewayRef])
+}
+
+/// One attempt to charge a tenant's mobile-money wallet (ZAAD/eDahab) for an invoice.
+/// Mobile-money approval is asynchronous, so an attempt starts PENDING and is settled
+/// either synchronously (immediate approval) or by the provider's webhook callback.
+/// The row `id` is the reference we send to the gateway and expect echoed back, giving
+/// idempotent settlement. Platform-level → accessed via prismaUnsafe, not in the guard.
+model GatewayCharge {
+  id          String              @id @default(cuid())
+  tenantId    String              @db.VarChar(36)
+  invoiceId   String
+  provider    String              @db.VarChar(20) // ZAAD | EDAHAB
+  payerRef    String              @db.VarChar(120) // wallet/phone charged
+  amount      Decimal             @db.Decimal(10, 2)
+  currency    String              @default("USD") @db.VarChar(3)
+  status      GatewayChargeStatus @default(PENDING)
+  providerRef String?             @db.VarChar(160) // gateway transaction id
+  message     String?             @db.Text
+  initiatedBy String?             @db.VarChar(190) // tenant user email, super-admin email, or "auto-collect"
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  tenant  Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  invoice SubscriptionInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@index([providerRef])
 }
 
 model User {

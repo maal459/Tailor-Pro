@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Home, Users, Ruler, Scissors, Wallet, BarChart3,
   BookOpen, ReceiptText, Bell, Search, History, Settings2,
-  DollarSign, UsersRound, Truck, Boxes, ShoppingCart, ShieldCheck
+  DollarSign, UsersRound, Truck, Boxes, ShoppingCart, ShieldCheck, CreditCard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BusinessSettings } from "@/lib/settings";
@@ -28,6 +28,7 @@ const items = [
   { href: "/notifications", label: "Notifications",icon: Bell },
   { href: "/ledger",        label: "Ledger",       icon: BookOpen },
   { href: "/receipts",      label: "Receipts",     icon: ReceiptText },
+  { href: "/billing",       label: "Subscription", icon: CreditCard },
   { href: "/settings",      label: "Settings",     icon: Settings2 },
 ];
 

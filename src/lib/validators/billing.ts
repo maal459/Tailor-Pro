@@ -20,6 +20,12 @@ export const planPriceSchema = z.object({
   isActive: z.coerce.boolean().default(true)
 });
 
+export const payInvoiceSchema = z.object({
+  invoiceId: z.string().min(1, "Invoice is required"),
+  provider: z.enum(["ZAAD", "EDAHAB"]),
+  payerRef: z.string().min(4, "Enter a valid wallet / phone number")
+});
+
 export const tenantBillingSchema = z.object({
   billingCycle: z.enum(cycles),
   autoCollect: z.coerce.boolean().default(false),
@@ -31,3 +37,4 @@ export const tenantBillingSchema = z.object({
 export type RecordPaymentValues = z.infer<typeof recordPaymentSchema>;
 export type PlanPriceValues = z.infer<typeof planPriceSchema>;
 export type TenantBillingValues = z.infer<typeof tenantBillingSchema>;
+export type PayInvoiceValues = z.infer<typeof payInvoiceSchema>;

@@ -17,10 +17,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="max-w-md space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center shadow-sm">
           <h1 className="text-xl font-semibold">Account unavailable</h1>
           <p className="text-sm text-[var(--muted)]">
-            This business account is currently suspended or cancelled. Please contact support to
-            restore access.
+            This business account is currently suspended for an unpaid subscription. Settle your
+            outstanding invoice to restore access instantly.
           </p>
-          <div className="flex justify-center">
+          <div className="flex flex-wrap justify-center gap-2">
+            <a
+              href="/billing"
+              className="inline-flex items-center justify-center rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            >
+              Pay subscription
+            </a>
             <LogoutButton />
           </div>
         </div>

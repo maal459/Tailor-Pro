@@ -132,14 +132,41 @@ Key behaviours:
 
 ---
 
-## 5. Automatic payment collection (ZAAD & eDahab)
+## 5. Online payments (ZAAD & eDahab)
 
-Somali mobile-money wallets can charge tenants automatically on renewal. Each provider is
-an adapter implementing the `PaymentGateway` interface (`src/lib/billing/gateway/`). Until
-credentials are supplied, an adapter reports `isConfigured() === false` and collection
-falls back to manual — nothing breaks.
+Somali mobile-money wallets can pay a subscription three ways, all using the same adapters
+(`src/lib/billing/gateway/`) and the same async settlement path:
 
-**To enable a gateway, set env vars and restart the app:**
+1. **Tenant self-service** — the tenant opens `/billing`, picks ZAAD/eDahab, enters their
+   wallet, and taps Pay. (Reachable even when suspended — see §6.)
+2. **Admin-triggered** — "Charge ZAAD/eDahab" on `/platform/finance` pushes a request to
+   the tenant's saved wallet.
+3. **Auto-collect** — the daily billing cycle charges opted-in tenants automatically.
+
+Until credentials are supplied, an adapter reports `isConfigured() === false`, the online
+buttons show "not available", and manual payment still works — nothing breaks.
+
+### How a charge settles (async-safe)
+
+Mobile-money approval is asynchronous, so every attempt is persisted as a `GatewayCharge`
+(status `PENDING`), whose row id is the reference handed to the gateway:
+
+- **Immediate approval** → the `charge()` call returns PAID and the invoice is settled at once.
+- **Deferred approval** → the charge stays PENDING; the provider later calls our **webhook**,
+  which verifies the signature and settles the matching charge. Settlement is **idempotent**
+  (a duplicate webhook never double-credits), and on success it marks the invoice paid,
+  advances the paid-through date, and reactivates a tenant suspended for non-payment.
+
+**Webhook endpoints** — register these at your provider's dashboard:
+
+```
+POST  https://<your-host>/api/billing/webhook/zaad
+POST  https://<your-host>/api/billing/webhook/edahab
+```
+
+(The exact URLs are also shown on `/platform/finance`.)
+
+### Credentials — set env vars and restart the app
 
 ZAAD (via the WaafiPay pre-authorize API, which also serves EVC/eDahab):
 
@@ -148,9 +175,10 @@ ZAAD_API_URL=https://api.waafipay.net/asm
 ZAAD_MERCHANT_UID=...
 ZAAD_API_USER_ID=...
 ZAAD_API_KEY=...
+ZAAD_WEBHOOK_SECRET=...        # HMAC-SHA256 secret used to verify callbacks
 ```
 
-eDahab (hash-signed REST API):
+eDahab (hash-signed REST API — `EDAHAB_SECRET_KEY` also verifies webhooks):
 
 ```
 EDAHAB_API_URL=https://edahab.net/api/api
@@ -159,23 +187,31 @@ EDAHAB_SECRET_KEY=...
 EDAHAB_AGENT_CODE=...
 ```
 
-> The exact endpoints/credentials depend on the merchant account and aggregator you sign
-> up with. The adapters implement the standard request/response shape (a USSD push the
-> customer approves on their phone); fill in the values above to go live. No other code
-> changes are required.
+> The exact endpoints/credentials depend on the merchant account and aggregator you sign up
+> with. The adapters implement the standard request/response and webhook-verification shape
+> (a USSD push the customer approves on their phone); fill in the values above to go live.
+> **No other code changes are required.**
 
-**Per-tenant setup:** on the tenant edit page, choose the gateway, enter the payer wallet
-number (`gatewayPayerRef`), and tick **Auto-collect on renewal**. The billing cycle then
-attempts to charge that wallet for any due invoice; a success records a
-`SubscriptionPayment` with method `ZAAD`/`EDAHAB` and the gateway's transaction id.
+**Per-tenant setup (for auto-collect):** on the tenant edit page choose the gateway, enter
+the payer wallet (`gatewayPayerRef`), and tick **Auto-collect on renewal**. A successful
+charge records a `SubscriptionPayment` (method `ZAAD`/`EDAHAB`) with the gateway transaction id.
+
+### Printable invoices & receipts
+
+Every invoice has a printable document at `/billing/invoices/<id>` and every payment a
+receipt at `/billing/receipts/<id>` (issued by the platform, billed to the business). Both
+are reachable by the owning tenant from their `/billing` portal and by a super-admin from
+`/platform/finance` (Invoice / Receipt links). Use the browser's **Print / Save PDF**.
 
 ---
 
 ## 6. Deactivating unpaid businesses (dunning)
 
 Suspension is the same mechanism used everywhere: a tenant with `status = SUSPENDED` is
-rejected at login and shown an *"Account unavailable"* notice in the dashboard (its data is
-untouched and returns the moment it's reactivated).
+rejected at login and shown an *"Account unavailable"* notice in the dashboard with a **Pay
+subscription** button linking to `/billing` (its data is untouched and returns the moment
+it's reactivated). The `/billing` portal sits outside the suspension lockout on purpose, so
+an unpaid tenant can still log in, pay, and self-reactivate.
 
 The **billing cycle** (`runBillingCycle`) drives this automatically:
 
@@ -217,6 +253,7 @@ Reactivation is automatic when the tenant pays, or manual via
 | `scripts/seed-plan-prices.ts` | Write code-default prices into `PlanPrice` (idempotent). |
 | `scripts/run-billing-cycle.ts` | Dunning run — cron this daily in production. |
 | `scripts/test-billing.ts` | End-to-end smoke test of the billing engine (self-cleaning). |
+| `scripts/test-charges.ts` | Smoke test of the online-payment / webhook settlement flow (self-cleaning). |
 | `scripts/test-isolation.ts`, `test-guard.ts`, `test-tenant-lifecycle.ts` | Multi-tenant isolation regression tests. |
 
 **Migrations:** this deployment carries an intentional local checksum mismatch on two

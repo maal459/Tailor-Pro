@@ -11,7 +11,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
 
   return (
     <div className="min-h-screen bg-[var(--bg)]">
-      <header className="flex flex-col gap-3 border-b border-[var(--border)] bg-[#1A1D2E] px-4 py-3 text-white">
+      <header className="flex flex-col gap-3 border-b border-[var(--border)] bg-gradient-to-r from-[#1A1D2E] to-[#252A40] px-4 py-3 text-white">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-5 w-5 text-[#E6652E]" />

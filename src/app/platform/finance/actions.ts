@@ -10,6 +10,7 @@ import {
   markInvoicePaid,
   runBillingCycle
 } from "@/lib/billing/invoices";
+import { initiateCharge, type InitiateResult } from "@/lib/billing/charges";
 import { GRACE_PERIOD_DAYS } from "@/lib/billing/plans";
 
 function revalidateFinance() {
@@ -82,6 +83,24 @@ export async function runBillingCycleAction() {
   const report = await runBillingCycle({ graceDays: GRACE_PERIOD_DAYS });
   revalidateFinance();
   return report;
+}
+
+/**
+ * Admin-triggered online charge against a tenant's registered wallet (uses the tenant's
+ * saved gateway + payer ref). Returns the charge result so the UI can report PAID /
+ * PENDING (awaiting phone approval) / FAILED.
+ */
+export async function chargeInvoiceViaGatewayAction(invoiceId: string): Promise<InitiateResult> {
+  const session = await requireSuperAdmin();
+  const invoice = await prismaUnsafe.subscriptionInvoice.findUnique({
+    where: { id: invoiceId },
+    select: { id: true }
+  });
+  if (!invoice) return { status: "FAILED", message: "Invoice not found." };
+
+  const result = await initiateCharge({ invoiceId, initiatedBy: session.email });
+  revalidateFinance();
+  return result;
 }
 
 export async function updateTenantBillingAction(tenantId: string, input: unknown) {

@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { Building2, CheckCircle2, PauseCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/ui/action-button";
+import { StatCard } from "@/components/platform/stat-card";
 import { TenantForm } from "@/components/forms/tenant-form";
 import { requireSuperAdmin } from "@/lib/auth/guards";
 import { prismaUnsafe } from "@/lib/db/prisma";
@@ -22,13 +24,22 @@ export default async function PlatformTenantsPage() {
     orderBy: { createdAt: "desc" }
   });
 
+  const activeCount = tenants.filter((t) => t.status === "ACTIVE").length;
+  const suspendedCount = tenants.filter((t) => t.status !== "ACTIVE").length;
+
   return (
     <div className="space-y-6">
-      <div>
+      <div className="rounded-2xl bg-gradient-to-br from-[#1A1D2E] to-[#2A2F45] p-6 text-white">
         <h1 className="text-2xl font-semibold">Tenants</h1>
-        <p className="text-sm text-[var(--muted)]">
+        <p className="text-sm text-white/70">
           {tenants.length} business{tenants.length !== 1 ? "es" : ""} on this deployment
         </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Total businesses" value={String(tenants.length)} icon={Building2} tone="violet" />
+        <StatCard label="Active" value={String(activeCount)} icon={CheckCircle2} tone="green" />
+        <StatCard label="Suspended / cancelled" value={String(suspendedCount)} icon={PauseCircle} tone={suspendedCount > 0 ? "amber" : "default"} />
       </div>
 
       <Card>

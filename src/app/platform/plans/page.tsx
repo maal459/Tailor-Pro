@@ -19,9 +19,9 @@ export default async function PlatformPlansPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="rounded-2xl bg-gradient-to-br from-[#1A1D2E] to-[#2A2F45] p-6 text-white">
         <h1 className="text-2xl font-semibold">Plans &amp; Pricing</h1>
-        <p className="text-sm text-[var(--muted)]">
+        <p className="text-sm text-white/70">
           Edit the prices tenants are billed. Limits and features below are enforced by the app.
           Yearly pricing gives 2 months free.
         </p>

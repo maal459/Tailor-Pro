@@ -32,6 +32,16 @@ export type ChargeResult = {
   message: string;
 };
 
+/** Normalised result of a provider webhook/callback after signature verification. */
+export type ParsedWebhook = {
+  /** The reference we sent on `charge()` (the GatewayCharge id), echoed back. */
+  reference: string;
+  /** Provider transaction id, if present. */
+  providerRef?: string;
+  success: boolean;
+  message?: string;
+};
+
 export interface PaymentGateway {
   readonly provider: GatewayProvider;
   /** True only when all required credentials are present in the environment. */
@@ -42,6 +52,12 @@ export interface PaymentGateway {
    * so callers never crash a billing run on a gateway hiccup.
    */
   charge(req: ChargeRequest): Promise<ChargeResult>;
+  /**
+   * Verifies a webhook/callback from the provider and extracts the settlement result.
+   * Returns null if the signature is invalid or the payload can't be understood (the
+   * route then ignores it). Provider-specific — implemented per adapter.
+   */
+  parseWebhook(rawBody: string, headers: Record<string, string>): ParsedWebhook | null;
 }
 
 /** Maps a provider to the SubscriptionPayment.method enum value it records under. */
@@ -67,4 +83,16 @@ export async function getGateway(provider: string | null | undefined): Promise<P
     default:
       return null;
   }
+}
+
+export const ALL_PROVIDERS: GatewayProvider[] = ["ZAAD", "EDAHAB"];
+
+/** The subset of providers whose credentials are present (available for live charges). */
+export async function configuredProviders(): Promise<GatewayProvider[]> {
+  const out: GatewayProvider[] = [];
+  for (const provider of ALL_PROVIDERS) {
+    const gateway = await getGateway(provider);
+    if (gateway?.isConfigured()) out.push(provider);
+  }
+  return out;
 }
