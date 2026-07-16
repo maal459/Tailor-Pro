@@ -10,4 +10,7 @@ export const createCustomerSchema = z.object({
   notes: z.string().optional()
 });
 
+export const updateCustomerSchema = createCustomerSchema;
+
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
+export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;

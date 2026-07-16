@@ -46,5 +46,29 @@ export const customerRepository = {
     notes?: string;
   }) {
     return prisma.customer.create({ data });
+  },
+
+  async byId(tenantId: string, id: string) {
+    return prisma.customer.findFirst({ where: { id, tenantId } });
+  },
+
+  async update(
+    tenantId: string,
+    id: string,
+    data: {
+      fullName: string;
+      phone: string;
+      alternativePhone?: string | null;
+      email?: string | null;
+      address?: string | null;
+      city?: string | null;
+      notes?: string | null;
+    }
+  ) {
+    return prisma.customer.updateMany({ where: { id, tenantId }, data });
+  },
+
+  async remove(tenantId: string, id: string) {
+    return prisma.customer.deleteMany({ where: { id, tenantId } });
   }
 };

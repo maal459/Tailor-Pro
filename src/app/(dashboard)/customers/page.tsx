@@ -1,8 +1,10 @@
-import { createCustomerAction } from "@/app/(dashboard)/customers/actions";
+import Link from "next/link";
+import { createCustomerAction, deleteCustomerAction } from "@/app/(dashboard)/customers/actions";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/table";
+import { ActionButton } from "@/components/ui/action-button";
 import { customerRepository } from "@/lib/repositories/customer-repository";
 import { requireAuth } from "@/lib/auth/guards";
 import { formatCurrency, toNumber } from "@/lib/utils";
@@ -72,7 +74,8 @@ export default async function CustomersPage({
             "City",
             "Orders",
             "Paid",
-            "Outstanding"
+            "Outstanding",
+            "Actions"
           ]}
         >
           {rows.map((customer) => {
@@ -95,7 +98,32 @@ export default async function CustomersPage({
                 <td className="px-4 py-3">{customer.city ?? "-"}</td>
                 <td className="px-4 py-3">{totalOrders}</td>
                 <td className="px-4 py-3">{formatCurrency(paid)}</td>
-                <td className="px-4 py-3">{formatCurrency(outstanding)}</td>
+                <td className={outstanding > 0 ? "px-4 py-3 font-medium text-red-600" : "px-4 py-3"}>
+                  {formatCurrency(outstanding)}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/customers/${customer.id}`}
+                      className="rounded-lg bg-[var(--primary)]/10 px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/20"
+                    >
+                      View
+                    </Link>
+                    <Link
+                      href={`/customers/${customer.id}/edit`}
+                      className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
+                    >
+                      Edit
+                    </Link>
+                    <ActionButton
+                      label="Delete"
+                      confirmText={`Delete customer "${customer.fullName}"? This cannot be undone.`}
+                      action={deleteCustomerAction.bind(null, customer.id)}
+                      successMessage="Customer deleted"
+                      className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
+                    />
+                  </div>
+                </td>
               </tr>
             );
           })}
