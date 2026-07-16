@@ -8,6 +8,7 @@ const TABS: { id: ReportPeriod; label: string }[] = [
   { id: "week", label: "This Week" },
   { id: "month", label: "This Month" },
   { id: "year", label: "This Year" },
+  { id: "all", label: "All Time" },
   { id: "custom", label: "Custom" }
 ];
 

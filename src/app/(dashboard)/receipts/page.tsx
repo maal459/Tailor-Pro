@@ -99,15 +99,30 @@ export default async function ReceiptsPage({
 
   return (
     <div className="space-y-6">
-      {/* Injected print CSS — overrides everything for this page */}
+      {/* Injected print CSS — compress the receipt so it prints on a single A4 page. */}
       <style>{`
         @media print {
-          aside, header, .no-print, [data-no-print] {
-            display: none !important;
-            visibility: hidden !important;
-          }
+          @page { size: A4 portrait; margin: 10mm; }
+          aside, header, .no-print, [data-no-print] { display: none !important; }
+          body { background: #fff !important; }
+          /* Kill the layout's forced 100vh height that leaves a near-empty second page */
+          .min-h-screen { min-height: 0 !important; }
           main { padding: 0 !important; margin: 0 !important; }
-          body { background: white !important; }
+          .space-y-6 > * + * { margin-top: 0 !important; }
+          /* Shrink the receipt to fit one page */
+          #receipt {
+            box-shadow: none !important; border: 0 !important;
+            max-width: 100% !important; width: 100% !important;
+            margin: 0 auto !important; padding: 0 !important;
+            font-size: 10.5px !important; line-height: 1.3 !important; color: #000 !important;
+          }
+          #receipt h2 { font-size: 18px !important; }
+          #receipt img { max-height: 80px !important; width: auto !important; }
+          #receipt table { font-size: 10px !important; }
+          #receipt .mt-6 { margin-top: 8px !important; }
+          #receipt .mt-4 { margin-top: 6px !important; }
+          #receipt .pb-4 { padding-bottom: 6px !important; }
+          #receipt .pt-4 { padding-top: 6px !important; }
         }
       `}</style>
 
