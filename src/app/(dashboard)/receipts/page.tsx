@@ -116,8 +116,7 @@ export default async function ReceiptsPage({
             margin: 0 auto !important; padding: 0 !important;
             font-size: 10.5px !important; line-height: 1.3 !important; color: #000 !important;
           }
-          #receipt h2 { font-size: 18px !important; }
-          #receipt img { max-height: 80px !important; width: auto !important; }
+          #receipt h2 { font-size: 20px !important; }
           #receipt table { font-size: 10px !important; }
           #receipt .mt-6 { margin-top: 8px !important; }
           #receipt .mt-4 { margin-top: 6px !important; }
@@ -186,16 +185,16 @@ export default async function ReceiptsPage({
         >
           {/* Receipt header */}
           <div className="border-b-2 pb-4" style={{ borderColor: settings.brandColor }}>
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between print:flex-row print:items-start print:justify-between">
               <div className="space-y-2">
                 {settings.logoDataUrl ? (
                   <img
                     src={settings.logoDataUrl}
                     alt={settings.businessName}
-                    className="max-h-18 max-w-48 object-contain"
+                    className="max-h-18 max-w-48 object-contain print:max-h-16"
                   />
                 ) : (
-                  <h2 className="text-3xl font-bold" style={{ color: settings.brandColor }}>
+                  <h2 className="text-3xl font-bold print:text-xl" style={{ color: settings.brandColor }}>
                     {settings.businessName}
                   </h2>
                 )}
@@ -208,15 +207,15 @@ export default async function ReceiptsPage({
               </div>
 
               {qr && (
-                <div className="flex justify-start md:justify-end">
-                  <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
-                    <img src={qr} alt="Receipt QR Code" className="h-36 w-36" />
+                <div className="flex shrink-0 justify-start md:justify-end print:justify-end">
+                  <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm print:rounded-lg print:p-1">
+                    <img src={qr} alt="Receipt QR Code" className="h-36 w-36 print:h-20 print:w-20" />
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 text-sm md:grid-cols-2 print:grid-cols-2">
               <div>
                 <p className="font-semibold text-gray-500 uppercase text-xs tracking-wider">Customer</p>
                 <p className="mt-1 font-bold text-lg">{order.customer.fullName}</p>
