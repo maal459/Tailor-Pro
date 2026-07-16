@@ -187,10 +187,31 @@ EDAHAB_SECRET_KEY=...
 EDAHAB_AGENT_CODE=...
 ```
 
-> The exact endpoints/credentials depend on the merchant account and aggregator you sign up
-> with. The adapters implement the standard request/response and webhook-verification shape
-> (a USSD push the customer approves on their phone); fill in the values above to go live.
-> **No other code changes are required.**
+> **Who receives the money:** funds are credited to the merchant account those API keys
+> belong to. For subscription billing that's the platform owner's single account — so use
+> *your own* merchant credentials.
+>
+> **Field mapping caveat:** the adapters implement the *standard* WaafiPay (ZAAD) and eDahab
+> request/response + webhook shapes. If the specific API your provider issues names fields
+> or endpoints differently, the only file to adjust is `src/lib/billing/gateway/zaad.ts` or
+> `edahab.ts` (the `charge()` payload and `parseWebhook()` mapping) — no other changes.
+
+### Going live — checklist
+
+1. **Get a merchant account** with your mobile-money provider/aggregator (e.g. WaafiPay for
+   ZAAD/EVC, eDahab's developer portal) and obtain the credentials above.
+2. **Set the env vars** in the server `.env` and `pm2 restart tailor-pro`. The
+   **Go-live setup checklist** on `/platform/finance` shows which vars are set/missing (a
+   green ✓ per var); the gateway chip flips from *not configured* to **live**.
+3. **Register the webhook URLs** (`…/api/billing/webhook/zaad` and `…/edahab`) in the
+   merchant dashboard.
+4. **Verify with a real charge to your own wallet** before customers use it:
+   ```bash
+   npx tsx scripts/test-gateway-connection.ts ZAAD 63XXXXXXX 0.01
+   ```
+   A success confirms the credentials work and funds reach your account.
+5. **Ensure `BILLING_SANDBOX` is unset** in production (it fakes approvals — for local
+   testing only).
 
 **Per-tenant setup (for auto-collect):** on the tenant edit page choose the gateway, enter
 the payer wallet (`gatewayPayerRef`), and tick **Auto-collect on renewal**. A successful

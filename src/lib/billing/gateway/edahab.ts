@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "crypto";
+import { isSandbox } from "@/lib/billing/gateway";
 import type {
   ChargeRequest,
   ChargeResult,
@@ -36,11 +37,20 @@ export const edahabGateway: PaymentGateway = {
   provider: "EDAHAB",
 
   isConfigured() {
+    if (isSandbox()) return true;
     const c = config();
     return Boolean(c.url && c.apiKey && c.secretKey && c.agentCode);
   },
 
   async charge(req: ChargeRequest): Promise<ChargeResult> {
+    if (isSandbox()) {
+      return {
+        success: true,
+        status: "PAID",
+        gatewayRef: `SANDBOX-EDAHAB-${req.reference.slice(-8)}`,
+        message: "Sandbox approval (test mode — no real charge)"
+      };
+    }
     const c = config();
     if (!this.isConfigured()) {
       return {

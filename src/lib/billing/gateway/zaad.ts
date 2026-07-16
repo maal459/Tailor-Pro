@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { isSandbox } from "@/lib/billing/gateway";
 import type {
   ChargeRequest,
   ChargeResult,
@@ -35,11 +36,20 @@ export const zaadGateway: PaymentGateway = {
   provider: "ZAAD",
 
   isConfigured() {
+    if (isSandbox()) return true;
     const c = config();
     return Boolean(c.url && c.merchantUid && c.apiUserId && c.apiKey);
   },
 
   async charge(req: ChargeRequest): Promise<ChargeResult> {
+    if (isSandbox()) {
+      return {
+        success: true,
+        status: "PAID",
+        gatewayRef: `SANDBOX-ZAAD-${req.reference.slice(-8)}`,
+        message: "Sandbox approval (test mode — no real charge)"
+      };
+    }
     const c = config();
     if (!this.isConfigured()) {
       return {

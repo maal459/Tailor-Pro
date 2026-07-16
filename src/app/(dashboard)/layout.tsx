@@ -45,7 +45,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex min-h-screen" style={{ ["--primary"]: settings.brandColor } as React.CSSProperties}>
       <Sidebar branding={settings} isSuperAdmin={isSuperAdmin} />
       <div className="flex min-h-screen flex-1 flex-col">
-        <Topbar />
+        <Topbar branding={settings} isSuperAdmin={isSuperAdmin} />
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>

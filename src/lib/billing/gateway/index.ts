@@ -87,12 +87,60 @@ export async function getGateway(provider: string | null | undefined): Promise<P
 
 export const ALL_PROVIDERS: GatewayProvider[] = ["ZAAD", "EDAHAB"];
 
+/**
+ * Sandbox / test mode. When `BILLING_SANDBOX=true`, both gateways report as configured
+ * and `charge()` auto-approves without a network call — so the full online-payment flow
+ * can be exercised without real ZAAD/eDahab credentials. MUST be off (unset) in a real
+ * production deployment, or tenants could "pay" without actually paying.
+ */
+export function isSandbox(): boolean {
+  return process.env.BILLING_SANDBOX === "true";
+}
+
 /** The subset of providers whose credentials are present (available for live charges). */
 export async function configuredProviders(): Promise<GatewayProvider[]> {
+  if (isSandbox()) return [...ALL_PROVIDERS];
   const out: GatewayProvider[] = [];
   for (const provider of ALL_PROVIDERS) {
     const gateway = await getGateway(provider);
     if (gateway?.isConfigured()) out.push(provider);
   }
   return out;
+}
+
+/** Env vars each provider needs to go live (money is credited to the account these belong to). */
+export const REQUIRED_ENV: Record<GatewayProvider, string[]> = {
+  ZAAD: ["ZAAD_API_URL", "ZAAD_MERCHANT_UID", "ZAAD_API_USER_ID", "ZAAD_API_KEY"],
+  EDAHAB: ["EDAHAB_API_URL", "EDAHAB_API_KEY", "EDAHAB_SECRET_KEY", "EDAHAB_AGENT_CODE"]
+};
+
+/** Env var used to verify incoming webhooks per provider. */
+export const WEBHOOK_ENV: Record<GatewayProvider, string> = {
+  ZAAD: "ZAAD_WEBHOOK_SECRET",
+  EDAHAB: "EDAHAB_SECRET_KEY"
+};
+
+export type GatewayConfigStatus = {
+  provider: GatewayProvider;
+  vars: Array<{ name: string; set: boolean }>;
+  webhookVar: string;
+  webhookSet: boolean;
+  ready: boolean;
+};
+
+/**
+ * Reports which required env vars are present per provider — presence only, never the
+ * values. Used to render a setup checklist so the operator knows exactly what's missing.
+ */
+export function gatewayConfigStatus(): GatewayConfigStatus[] {
+  return ALL_PROVIDERS.map((provider) => {
+    const vars = REQUIRED_ENV[provider].map((name) => ({ name, set: Boolean(process.env[name]) }));
+    return {
+      provider,
+      vars,
+      webhookVar: WEBHOOK_ENV[provider],
+      webhookSet: Boolean(process.env[WEBHOOK_ENV[provider]]),
+      ready: vars.every((v) => v.set)
+    };
+  });
 }

@@ -12,10 +12,11 @@ import { StatCard } from "@/components/platform/stat-card";
 import { RunBillingCycleButton } from "@/components/forms/run-billing-cycle-button";
 import { RecordPaymentForm } from "@/components/forms/record-payment-form";
 import { ChargeGatewayButton } from "@/components/forms/charge-gateway-button";
+import { FinanceFilterBar } from "@/components/forms/finance-filter-bar";
 import { requireSuperAdmin } from "@/lib/auth/guards";
 import { prismaUnsafe } from "@/lib/db/prisma";
 import { getBillingSummary } from "@/lib/billing/invoices";
-import { configuredProviders, ALL_PROVIDERS } from "@/lib/billing/gateway";
+import { configuredProviders, ALL_PROVIDERS, isSandbox, gatewayConfigStatus } from "@/lib/billing/gateway";
 import { GRACE_PERIOD_DAYS, PLAN_ORDER } from "@/lib/billing/plans";
 import { formatCurrency, toNumber } from "@/lib/utils";
 import { generateInvoiceAction, cancelInvoiceAction } from "@/app/platform/finance/actions";
@@ -27,9 +28,31 @@ const tenantTone: Record<string, "success" | "warn" | "danger"> = {
   ACTIVE: "success", SUSPENDED: "warn", CANCELLED: "danger"
 };
 const providerLabel: Record<string, string> = { ZAAD: "ZAAD", EDAHAB: "eDahab" };
+const PLAN_VALUES = ["FREE", "BASIC", "PRO", "ENTERPRISE"];
 
-export default async function PlatformFinancePage() {
+export default async function PlatformFinancePage({
+  searchParams
+}: {
+  searchParams: Promise<{ plan?: string; from?: string; to?: string }>;
+}) {
   await requireSuperAdmin();
+  const sandbox = isSandbox();
+  const cfgStatus = gatewayConfigStatus();
+
+  const params = await searchParams;
+  const planFilter = PLAN_VALUES.includes(params.plan ?? "") ? params.plan : undefined;
+  const fromDate = params.from ? new Date(params.from) : undefined;
+  const toDate = params.to ? new Date(`${params.to}T23:59:59`) : undefined;
+  const validFrom = fromDate && !Number.isNaN(fromDate.valueOf()) ? fromDate : undefined;
+  const validTo = toDate && !Number.isNaN(toDate.valueOf()) ? toDate : undefined;
+
+  const tenantWhere = {
+    ...(planFilter ? { subscriptionPlan: planFilter as "FREE" | "BASIC" | "PRO" | "ENTERPRISE" } : {}),
+    ...(validFrom || validTo
+      ? { createdAt: { ...(validFrom ? { gte: validFrom } : {}), ...(validTo ? { lte: validTo } : {}) } }
+      : {})
+  };
+  const filtersActive = Boolean(planFilter || validFrom || validTo);
 
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
@@ -38,11 +61,12 @@ export default async function PlatformFinancePage() {
   const [summary, tenants, openInvoices, recentPayments, providers] = await Promise.all([
     getBillingSummary(),
     prismaUnsafe.tenant.findMany({
+      where: tenantWhere,
       orderBy: { businessName: "asc" },
       select: {
         id: true, businessName: true, subscriptionPlan: true, billingCycle: true,
         status: true, autoCollect: true, gatewayProvider: true, gatewayPayerRef: true,
-        currentPeriodEnd: true
+        currentPeriodEnd: true, createdAt: true
       }
     }),
     prismaUnsafe.subscriptionInvoice.findMany({
@@ -89,28 +113,70 @@ export default async function PlatformFinancePage() {
             <p className="text-sm font-semibold">Online payment gateways</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {sandbox && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                <span className="h-2 w-2 rounded-full bg-amber-500" /> SANDBOX (test mode)
+              </span>
+            )}
             {ALL_PROVIDERS.map((p) => {
               const on = providers.includes(p);
+              const label = sandbox ? "test" : on ? "live" : "not configured";
+              const cls = sandbox
+                ? "bg-amber-100 text-amber-700"
+                : on
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-slate-100 text-slate-500";
+              const dot = sandbox ? "bg-amber-500" : on ? "bg-emerald-500" : "bg-slate-400";
               return (
-                <span
-                  key={p}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${on ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
-                >
-                  <span className={`h-2 w-2 rounded-full ${on ? "bg-emerald-500" : "bg-slate-400"}`} />
-                  {providerLabel[p]} {on ? "live" : "not configured"}
+                <span key={p} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${cls}`}>
+                  <span className={`h-2 w-2 rounded-full ${dot}`} />
+                  {providerLabel[p]} {label}
                 </span>
               );
             })}
           </div>
         </div>
         <p className="mt-3 text-xs text-[var(--muted)]">
-          {providers.length === 0
-            ? "Set the ZAAD_*/EDAHAB_* env vars on the server to accept online payments. "
-            : "Tenants can pay online from their billing page. "}
+          {sandbox
+            ? "⚠ Sandbox mode is ON — online payments auto-approve without a real charge. Unset BILLING_SANDBOX before going live. "
+            : providers.length === 0
+              ? "Set the ZAAD_*/EDAHAB_* env vars on the server to accept online payments. "
+              : "Tenants can pay online from their billing page. "}
           Configure these callback URLs at your provider:{" "}
           <code className="rounded bg-[var(--bg)] px-1">{proto}://{host}/api/billing/webhook/zaad</code>{" · "}
           <code className="rounded bg-[var(--bg)] px-1">{proto}://{host}/api/billing/webhook/edahab</code>
         </p>
+
+        <details className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--bg)] p-3 text-xs">
+          <summary className="cursor-pointer font-medium">Go-live setup checklist</summary>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {cfgStatus.map((s) => (
+              <div key={s.provider}>
+                <p className="flex items-center gap-2 font-semibold">
+                  {providerLabel[s.provider]}
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${s.ready ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
+                    {s.ready ? "ready" : "incomplete"}
+                  </span>
+                </p>
+                <ul className="mt-1 space-y-0.5 font-mono">
+                  {s.vars.map((v) => (
+                    <li key={v.name} className={v.set ? "text-emerald-600" : "text-[var(--muted)]"}>
+                      {v.set ? "✓" : "○"} {v.name}
+                    </li>
+                  ))}
+                  <li className={s.webhookSet ? "text-emerald-600" : "text-[var(--muted)]"}>
+                    {s.webhookSet ? "✓" : "○"} {s.webhookVar} (webhook)
+                  </li>
+                </ul>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[var(--muted)]">
+            Set these in the server <code className="rounded bg-[var(--card)] px-1">.env</code> and restart. Money is
+            credited to the merchant account your keys belong to. Verify before going live with{" "}
+            <code className="rounded bg-[var(--card)] px-1">npx tsx scripts/test-gateway-connection.ts</code>.
+          </p>
+        </details>
       </Card>
 
       {/* Plan distribution */}
@@ -131,10 +197,19 @@ export default async function PlatformFinancePage() {
 
       {/* Businesses & billing */}
       <div>
-        <h2 className="mb-3 text-lg font-semibold">Businesses &amp; subscriptions</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Businesses &amp; subscriptions</h2>
+          <p className="text-sm text-[var(--muted)]">
+            {tenants.length} business{tenants.length !== 1 ? "es" : ""}
+            {filtersActive ? " (filtered)" : ""}
+          </p>
+        </div>
+        <div className="mb-3">
+          <FinanceFilterBar />
+        </div>
         <DataTable
-          headers={["Business", "Plan", "Status", "Paid through", "Open invoice", "Actions"]}
-          emptyMessage="No businesses yet."
+          headers={["Business", "Plan", "Status", "Joined", "Paid through", "Open invoice", "Actions"]}
+          emptyMessage={filtersActive ? "No businesses match these filters." : "No businesses yet."}
         >
           {tenants.map((tenant) => {
             const open = openByTenant.get(tenant.id);
@@ -153,6 +228,9 @@ export default async function PlatformFinancePage() {
                 <td className="px-4 py-3">{tenant.subscriptionPlan}</td>
                 <td className="px-4 py-3">
                   <Badge label={tenant.status} tone={tenantTone[tenant.status] ?? "neutral"} />
+                </td>
+                <td className="px-4 py-3 text-[var(--muted)]">
+                  {format(tenant.createdAt, "dd MMM yyyy")}
                 </td>
                 <td className="px-4 py-3 text-[var(--muted)]">
                   {tenant.currentPeriodEnd ? format(tenant.currentPeriodEnd, "dd MMM yyyy") : "—"}
