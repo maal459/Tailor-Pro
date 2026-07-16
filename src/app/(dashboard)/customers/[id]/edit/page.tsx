@@ -35,25 +35,9 @@ export default async function EditCustomerPage({
             <span className="font-medium">Phone *</span>
             <Input name="phone" defaultValue={customer.phone} required />
           </label>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium">Alternative phone</span>
-            <Input name="alternativePhone" defaultValue={customer.alternativePhone ?? ""} />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium">Email</span>
-            <Input name="email" type="email" defaultValue={customer.email ?? ""} />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium">City</span>
-            <Input name="city" defaultValue={customer.city ?? ""} />
-          </label>
-          <label className="space-y-1 text-sm">
-            <span className="font-medium">Address</span>
-            <Input name="address" defaultValue={customer.address ?? ""} />
-          </label>
           <label className="space-y-1 text-sm md:col-span-2">
-            <span className="font-medium">Notes</span>
-            <Input name="notes" defaultValue={customer.notes ?? ""} />
+            <span className="font-medium">Address</span>
+            <Input name="address" defaultValue={customer.address || "Borama, Somaliland"} />
           </label>
           <div className="flex gap-2 md:col-span-2">
             <Button type="submit">Save Changes</Button>

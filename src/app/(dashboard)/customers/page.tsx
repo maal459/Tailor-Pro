@@ -46,15 +46,11 @@ export default async function CustomersPage({
       </div>
 
       <Card>
-        <form className="grid gap-3 md:grid-cols-4" action={createCustomerAction}>
+        <form className="grid gap-3 md:grid-cols-3" action={createCustomerAction}>
           <Input name="fullName" placeholder="Full name" required />
           <Input name="phone" placeholder="Phone" required />
-          <Input name="email" placeholder="Email" type="email" />
-          <Input name="city" placeholder="City" />
-          <Input name="alternativePhone" placeholder="Alternative phone" />
-          <Input name="address" placeholder="Address" />
-          <Input name="notes" placeholder="Notes" className="md:col-span-2" />
-          <Button type="submit">Add Customer</Button>
+          <Input name="address" placeholder="Address" defaultValue="Borama, Somaliland" />
+          <Button type="submit" className="md:col-span-3 md:w-fit">Add Customer</Button>
         </form>
       </Card>
 

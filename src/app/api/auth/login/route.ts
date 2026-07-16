@@ -4,8 +4,19 @@ import { prismaUnsafe } from "@/lib/db/prisma";
 import { loginSchema } from "@/lib/validators/auth";
 import { createSession } from "@/lib/auth/session";
 import { getPermissionsForRole } from "@/lib/auth/permissions";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  // Brute-force guard: 15 attempts / 10 min per IP. Fails open when the IP is unknown,
+  // so a missing proxy header can never lock legitimate users out.
+  const ip = clientIp(request);
+  if (ip && !rateLimit(`login:${ip}`, 15, 10 * 60 * 1000)) {
+    return NextResponse.json(
+      { message: "Too many login attempts. Please wait a few minutes and try again." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json();
   const parsed = loginSchema.safeParse(body);
 

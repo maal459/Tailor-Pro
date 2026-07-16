@@ -94,6 +94,9 @@ export const ALL_PROVIDERS: GatewayProvider[] = ["ZAAD", "EDAHAB"];
  * production deployment, or tenants could "pay" without actually paying.
  */
 export function isSandbox(): boolean {
+  // Hard guard: sandbox can NEVER be active in production, even if the env var is set —
+  // otherwise a stray BILLING_SANDBOX would let tenants "pay" without actually paying.
+  if (process.env.NODE_ENV === "production") return false;
   return process.env.BILLING_SANDBOX === "true";
 }
 
