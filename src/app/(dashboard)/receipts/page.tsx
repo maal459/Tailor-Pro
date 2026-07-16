@@ -2,24 +2,43 @@ import QRCode from "qrcode";
 import { headers } from "next/headers";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
-import { formatCurrency, toNumber } from "@/lib/utils";
+import { formatCurrency, toNumber, cn } from "@/lib/utils";
 import { PrintButton } from "@/components/ui/print-button";
-import { ReceiptOrderSelector } from "@/components/forms/receipt-order-selector";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { getBusinessSettings } from "@/lib/settings";
+
+const RESULT_LIMIT = 40;
 
 export default async function ReceiptsPage({
   searchParams
 }: {
-  searchParams: Promise<{ orderId?: string }>;
+  searchParams: Promise<{ orderId?: string; q?: string }>;
 }) {
   const session = await requireAuth();
   const params  = await searchParams;
   const settings = await getBusinessSettings(session.tenantId);
+  const q = params.q?.trim();
 
+  // Server-side search (matches anywhere in name/phone/number) capped to a page of results,
+  // so this scales to thousands of orders instead of loading them all into the browser.
   const orders = await prisma.order.findMany({
-    where:   { tenantId: session.tenantId },
+    where: {
+      tenantId: session.tenantId,
+      ...(q
+        ? {
+            OR: [
+              { orderNumber: { contains: q } },
+              { customer: { fullName: { contains: q } } },
+              { customer: { customerNumber: { contains: q } } },
+              { customer: { phone: { contains: q } } }
+            ]
+          }
+        : {})
+    },
     include: { customer: true },
-    orderBy: { orderDate: "desc" }
+    orderBy: { orderDate: "desc" },
+    take: RESULT_LIMIT
   });
 
   const orderId = params.orderId ?? orders[0]?.id;
@@ -61,11 +80,6 @@ export default async function ReceiptsPage({
       )
     : null;
 
-  const orderOptions = orders.map((o) => ({
-    id:    o.id,
-    label: `${o.orderNumber} — ${o.customer.fullName}`
-  }));
-
   function renderAmount(value: number) {
     const usd = <span>{formatCurrency(value)}</span>;
 
@@ -98,15 +112,53 @@ export default async function ReceiptsPage({
       `}</style>
 
       {/* ── Screen-only header & controls ── */}
-      <div className="no-print print:hidden" data-no-print="true">
-        <div className="mb-4">
-          <h1 className="text-2xl font-semibold">Receipts</h1>
-          <p className="text-sm text-[var(--muted)]">Printable order receipt with payment history</p>
+      <div className="no-print print:hidden space-y-3" data-no-print="true">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 className="text-2xl font-semibold">Receipts</h1>
+            <p className="text-sm text-[var(--muted)]">Search an order or customer, then print the receipt</p>
+          </div>
+          <PrintButton label="Print Receipt" />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-          <ReceiptOrderSelector orders={orderOptions} selectedId={orderId ?? ""} />
-          <PrintButton label="Print Receipt" />
+        <form method="get" className="flex gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
+          <Input
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Search by customer name, phone, or order number…"
+            className="flex-1"
+          />
+          <Button type="submit">Search</Button>
+        </form>
+
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2">
+          {orders.length === 0 ? (
+            <p className="px-3 py-3 text-center text-sm text-[var(--muted)]">
+              No orders match &ldquo;{q}&rdquo;. Try a different name or number.
+            </p>
+          ) : (
+            <>
+              <p className="px-3 py-1 text-xs text-[var(--muted)]">
+                {q ? `${orders.length} match${orders.length !== 1 ? "es" : ""}` : "Recent orders"}
+                {orders.length === RESULT_LIMIT ? " · showing first 40, refine to narrow" : ""}
+              </p>
+              <div className="max-h-56 overflow-auto">
+                {orders.map((o) => (
+                  <a
+                    key={o.id}
+                    href={`/receipts?orderId=${o.id}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+                    className={cn(
+                      "block rounded-xl px-3 py-2 text-sm transition-colors hover:bg-[var(--primary)]/10",
+                      o.id === orderId && "bg-[var(--primary)]/10 font-semibold text-[var(--primary)]"
+                    )}
+                  >
+                    <span className="font-mono text-xs">{o.orderNumber}</span> — {o.customer.fullName}
+                    <span className="text-[var(--muted)]"> · {o.customer.phone}</span>
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -134,6 +186,9 @@ export default async function ReceiptsPage({
                 )}
                 <p className="text-sm text-gray-700">{settings.receiptSubtitle}</p>
                 <p className="text-sm font-medium text-gray-700">{settings.receiptTopLine}</p>
+                {settings.receiptFooter && (
+                  <p className="whitespace-pre-line text-xs text-gray-600">{settings.receiptFooter}</p>
+                )}
                 <p className="text-xs text-gray-500">Receipt generated: {new Date().toLocaleDateString()}</p>
               </div>
 
@@ -254,10 +309,9 @@ export default async function ReceiptsPage({
             </div>
           )}
 
-          {/* Footer */}
+          {/* Footer — business info now sits in the letterhead at the top */}
           <div className="mt-6 border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
-            <p>{settings.receiptFooter}</p>
-            <p className="mt-1">This receipt was generated on {new Date().toLocaleString()}</p>
+            <p>This receipt was generated on {new Date().toLocaleString()}</p>
           </div>
         </div>
       ) : (

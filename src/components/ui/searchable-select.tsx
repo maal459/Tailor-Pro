@@ -29,9 +29,13 @@ export function SearchableSelect({
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const filtered = options.filter((opt) =>
-    opt.label.toLowerCase().includes(query.toLowerCase())
-  );
+  // Match anywhere in the label (not just the start), and cap how many are rendered so a
+  // large list (thousands of customers/orders) never renders thousands of DOM nodes at once.
+  const LIMIT = 50;
+  const q = query.trim().toLowerCase();
+  const matches = q ? options.filter((opt) => opt.label.toLowerCase().includes(q)) : options;
+  const filtered = matches.slice(0, LIMIT);
+  const overflow = matches.length - filtered.length;
   const selected = options.find((opt) => opt.id === value);
 
   useEffect(() => {
@@ -104,6 +108,11 @@ export function SearchableSelect({
                   {opt.label}
                 </button>
               ))
+            )}
+            {overflow > 0 && (
+              <p className="px-3 py-2 text-center text-xs text-[var(--muted)]">
+                +{overflow} more — keep typing to narrow
+              </p>
             )}
           </div>
         </div>
