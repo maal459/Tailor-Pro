@@ -69,3 +69,23 @@ export async function updatePaymentAction(paymentId: string, input: unknown) {
   revalidatePath("/dashboard");
   revalidatePath("/ledger");
 }
+
+export async function deletePaymentAction(paymentId: string) {
+  const session = await requireAuth();
+
+  const existing = await prisma.payment.findFirst({
+    where: { id: paymentId, tenantId: session.tenantId }
+  });
+  if (!existing) {
+    throw new Error("Payment not found");
+  }
+
+  await prisma.payment.deleteMany({ where: { id: paymentId, tenantId: session.tenantId } });
+
+  revalidatePath("/payments");
+  revalidatePath("/payments/history");
+  revalidatePath("/orders");
+  revalidatePath("/dashboard");
+  revalidatePath("/ledger");
+  revalidatePath("/receivables");
+}

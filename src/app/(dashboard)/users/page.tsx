@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/table";
+import { ActionButton } from "@/components/ui/action-button";
 import { UserForm } from "@/components/forms/user-form";
 import { requirePermission } from "@/lib/auth/guards";
 import { userRepository, type UserRow } from "@/lib/repositories/user-repository";
-import { createUserAction } from "@/app/(dashboard)/users/actions";
+import { createUserAction, deleteUserAction } from "@/app/(dashboard)/users/actions";
 
 export default async function UsersPage({
   searchParams
@@ -54,12 +55,23 @@ export default async function UsersPage({
               <td className="px-4 py-3">{user.isActive ? "Active" : "Inactive"}</td>
               <td className="px-4 py-3">{user.createdAt.toLocaleDateString()}</td>
               <td className="px-4 py-3">
-                <Link
-                  href={`/users/${user.id}/edit`}
-                  className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
-                >
-                  Edit
-                </Link>
+                <div className="flex gap-2">
+                  <Link
+                    href={`/users/${user.id}/edit`}
+                    className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
+                  >
+                    Edit
+                  </Link>
+                  {user.id !== session.userId && (
+                    <ActionButton
+                      label="Delete"
+                      confirmText={`Delete user "${user.fullName}"?`}
+                      action={deleteUserAction.bind(null, user.id)}
+                      successMessage="User deleted"
+                      className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
+                    />
+                  )}
+                </div>
               </td>
             </tr>
           ))}

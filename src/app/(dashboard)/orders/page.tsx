@@ -1,11 +1,14 @@
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { ActionButton } from "@/components/ui/action-button";
 import { OrderForm } from "@/components/forms/order-form";
 import { requireAuth } from "@/lib/auth/guards";
 import { orderRepository } from "@/lib/repositories/order-repository";
 import { prisma } from "@/lib/db/prisma";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { deleteOrderAction } from "@/app/(dashboard)/orders/actions";
 
 export default async function OrdersPage({
   searchParams
@@ -56,7 +59,7 @@ export default async function OrdersPage({
       </Card>
 
       <DataTable
-        headers={["Order #", "Customer", "Status", "Priority", "Total", "Paid", "Balance", "Delivery"]}
+        headers={["Order #", "Customer", "Status", "Priority", "Total", "Paid", "Balance", "Delivery", "Actions"]}
       >
         {orders.rows.map((order) => {
           const total =
@@ -82,6 +85,29 @@ export default async function OrdersPage({
               </td>
               <td className="whitespace-nowrap px-4 py-3 text-[var(--muted)]">
                 {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : "—"}
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/orders/${order.id}`}
+                    className="rounded-lg bg-[var(--primary)]/10 px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/20"
+                  >
+                    View
+                  </Link>
+                  <Link
+                    href={`/orders/${order.id}/edit`}
+                    className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
+                  >
+                    Edit
+                  </Link>
+                  <ActionButton
+                    label="Delete"
+                    confirmText={`Delete order ${order.orderNumber}?`}
+                    action={deleteOrderAction.bind(null, order.id)}
+                    successMessage="Order deleted"
+                    className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
+                  />
+                </div>
               </td>
             </tr>
           );

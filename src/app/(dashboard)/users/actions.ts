@@ -91,3 +91,23 @@ export async function updateUserAction(userId: string, formData: FormData) {
   revalidatePath("/users");
   revalidatePath(`/users/${userId}/edit`);
 }
+
+export async function deleteUserAction(userId: string) {
+  const session = await requirePermission("users.manage");
+
+  if (userId === session.userId) {
+    throw new Error("You cannot delete your own account.");
+  }
+
+  const existing = await prisma.user.findFirst({ where: { id: userId, tenantId: session.tenantId } });
+  if (!existing) {
+    throw new Error("User not found");
+  }
+  if (existing.isSuperAdmin) {
+    throw new Error("A platform super-admin cannot be deleted here.");
+  }
+
+  await prisma.user.deleteMany({ where: { id: userId, tenantId: session.tenantId } });
+
+  revalidatePath("/users");
+}

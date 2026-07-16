@@ -30,6 +30,12 @@ export default async function PurchaseDetailPage({
         </div>
         <div className="flex gap-2">
           <Link
+            href={`/purchases/${purchase.id}/edit`}
+            className="rounded-xl bg-[var(--violet)]/10 px-4 py-2 text-sm font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
+          >
+            Edit
+          </Link>
+          <Link
             href={`/suppliers/${purchase.supplierId}`}
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >

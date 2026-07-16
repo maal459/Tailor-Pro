@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { MeasurementForm } from "@/components/forms/measurement-form";
 import { Card } from "@/components/ui/card";
+import { ActionButton } from "@/components/ui/action-button";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
+import { deleteMeasurementProfileAction } from "@/app/(dashboard)/measurements/actions";
 
 export default async function MeasurementsPage() {
   const session = await requireAuth();
@@ -36,9 +39,30 @@ export default async function MeasurementsPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {profiles.map((profile) => (
           <Card key={profile.id}>
-            <p className="text-xs font-medium text-[var(--muted)]">{profile.customer.customerNumber}</p>
-            <h3 className="mt-1 text-lg font-semibold">{profile.name}</h3>
-            <p className="text-sm text-[var(--primary)]">{profile.garmentType.name}</p>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-medium text-[var(--muted)]">
+                  {profile.customer.customerNumber} · {profile.customer.fullName}
+                </p>
+                <h3 className="mt-1 text-lg font-semibold">{profile.name}</h3>
+                <p className="text-sm text-[var(--primary)]">{profile.garmentType.name}</p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <Link
+                  href={`/measurements/${profile.id}/edit`}
+                  className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
+                >
+                  Edit
+                </Link>
+                <ActionButton
+                  label="Delete"
+                  confirmText={`Delete measurement profile "${profile.name}"?`}
+                  action={deleteMeasurementProfileAction.bind(null, profile.id)}
+                  successMessage="Profile deleted"
+                  className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
+                />
+              </div>
+            </div>
             <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               {profile.fields.map((field) => (
                 <p key={field.id}>

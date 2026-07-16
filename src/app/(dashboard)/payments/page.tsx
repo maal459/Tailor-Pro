@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/table";
+import { ActionButton } from "@/components/ui/action-button";
 import { PaymentForm } from "@/components/forms/payment-form";
+import { deletePaymentAction } from "@/app/(dashboard)/payments/actions";
 import { requireAuth } from "@/lib/auth/guards";
 import { paymentRepository } from "@/lib/repositories/payment-repository";
 import { prisma } from "@/lib/db/prisma";
@@ -126,6 +128,13 @@ export default async function PaymentsPage({
                 >
                   Edit
                 </Link>
+                <ActionButton
+                  label="Delete"
+                  confirmText={`Delete this ${formatCurrency(toNumber(payment.amount))} payment? This affects the order balance.`}
+                  action={deletePaymentAction.bind(null, payment.id)}
+                  successMessage="Payment deleted"
+                  className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
+                />
               </div>
             </td>
           </tr>
