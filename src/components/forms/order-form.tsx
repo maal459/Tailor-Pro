@@ -5,13 +5,12 @@ import { createOrderAction } from "@/app/(dashboard)/orders/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { AsyncCombobox } from "@/components/ui/async-combobox";
 import { useToast } from "@/components/ui/toaster";
 
 type Option = { id: string; label: string };
 
 type Props = {
-  customers: Option[];
   garmentTypes: Option[];
   profiles: Array<{ id: string; customerId: string; label: string }>;
 };
@@ -25,7 +24,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export function OrderForm({ customers, garmentTypes, profiles }: Props) {
+export function OrderForm({ garmentTypes, profiles }: Props) {
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
 
@@ -87,10 +86,10 @@ export function OrderForm({ customers, garmentTypes, profiles }: Props) {
         <p className="mb-3 text-sm font-semibold text-[var(--text)]">Order Details</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Customer *">
-            <SearchableSelect
+            <AsyncCombobox
+              endpoint="/api/search/customers"
               value={customerId}
-              onChange={(v) => { setCustomerId(v); setItem((prev) => ({ ...prev, measurementProfileId: "" })); }}
-              options={customers}
+              onSelect={(r) => { setCustomerId(r?.id ?? ""); setItem((prev) => ({ ...prev, measurementProfileId: "" })); }}
               placeholder="Search by phone or name…"
             />
           </Field>

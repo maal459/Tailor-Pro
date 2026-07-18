@@ -9,8 +9,7 @@ import { deleteMeasurementProfileAction } from "@/app/(dashboard)/measurements/a
 export default async function MeasurementsPage() {
   const session = await requireAuth();
 
-  const [customers, garmentTypes, profiles] = await Promise.all([
-    prisma.customer.findMany({ where: { tenantId: session.tenantId }, orderBy: { fullName: "asc" } }),
+  const [garmentTypes, profiles] = await Promise.all([
     prisma.garmentType.findMany({ where: { tenantId: session.tenantId, isActive: true }, orderBy: { name: "asc" } }),
     prisma.measurementProfile.findMany({
       where: { tenantId: session.tenantId },
@@ -28,10 +27,6 @@ export default async function MeasurementsPage() {
 
       <Card>
         <MeasurementForm
-          customers={customers.map((c) => ({
-            id: c.id,
-            label: `${c.phone} · ${c.fullName}`
-          }))}
           garmentTypes={garmentTypes.map((gt) => ({ id: gt.id, label: gt.name }))}
         />
       </Card>

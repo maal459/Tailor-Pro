@@ -15,12 +15,7 @@ export default async function OrderHistoryPage({
   const session = await requireAuth();
   const params = await searchParams;
 
-  const customers = await prisma.customer.findMany({
-    where: { tenantId: session.tenantId },
-    orderBy: { fullName: "asc" }
-  });
-
-  const selectedCustomerId = params.customerId ?? customers[0]?.id ?? "";
+  const selectedCustomerId = params.customerId ?? "";
 
   const [customer, orders, payments] = selectedCustomerId
     ? await Promise.all([
@@ -60,11 +55,8 @@ export default async function OrderHistoryPage({
           <div className="flex-1">
             <label className="mb-1 block text-xs font-medium text-[var(--muted)]">Search customer</label>
             <CustomerHistorySelector
-              customers={customers.map((customer) => ({
-                id: customer.id,
-                label: `${customer.phone} · ${customer.fullName}`
-              }))}
               selectedId={selectedCustomerId}
+              initialLabel={customer ? `${customer.phone} · ${customer.fullName}` : ""}
             />
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

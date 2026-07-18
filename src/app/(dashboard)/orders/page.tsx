@@ -19,9 +19,8 @@ export default async function OrdersPage({
   const params = await searchParams;
   const page = Number(params.page ?? "1");
 
-  const [orders, customers, garmentTypes, profiles] = await Promise.all([
+  const [orders, garmentTypes, profiles] = await Promise.all([
     orderRepository.list(session.tenantId, page, 10),
-    prisma.customer.findMany({ where: { tenantId: session.tenantId }, orderBy: { fullName: "asc" } }),
     prisma.garmentType.findMany({ where: { tenantId: session.tenantId }, orderBy: { name: "asc" } }),
     prisma.measurementProfile.findMany({ where: { tenantId: session.tenantId }, include: { customer: true } })
   ]);
@@ -45,10 +44,6 @@ export default async function OrdersPage({
 
       <Card>
         <OrderForm
-          customers={customers.map((customer) => ({
-            id: customer.id,
-            label: `${customer.phone} · ${customer.fullName}`
-          }))}
           garmentTypes={garmentTypes.map((garmentType) => ({ id: garmentType.id, label: garmentType.name }))}
           profiles={profiles.map((profile) => ({
             id: profile.id,

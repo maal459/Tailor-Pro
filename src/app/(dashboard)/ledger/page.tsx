@@ -15,12 +15,13 @@ export default async function LedgerPage({
   const session = await requireAuth();
   const params = await searchParams;
 
-  const customers = await prisma.customer.findMany({
-    where: { tenantId: session.tenantId },
-    orderBy: { fullName: "asc" }
-  });
-
-  const selectedCustomerId = params.customerId ?? customers[0]?.id;
+  const selectedCustomerId = params.customerId;
+  const selectedCustomer = selectedCustomerId
+    ? await prisma.customer.findFirst({
+        where: { id: selectedCustomerId, tenantId: session.tenantId },
+        select: { fullName: true, phone: true }
+      })
+    : null;
   const ledger = selectedCustomerId
     ? await financeService.customerLedger(session.tenantId, selectedCustomerId)
     : [];
@@ -37,10 +38,7 @@ export default async function LedgerPage({
           <CustomerHistorySelector
             basePath="/ledger"
             selectedId={selectedCustomerId ?? ""}
-            customers={customers.map((customer) => ({
-              id: customer.id,
-              label: `${customer.phone} · ${customer.fullName}`
-            }))}
+            initialLabel={selectedCustomer ? `${selectedCustomer.phone} · ${selectedCustomer.fullName}` : ""}
           />
           <PrintButton />
         </div>

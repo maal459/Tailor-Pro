@@ -5,16 +5,14 @@ import { createMeasurementProfileAction } from "@/app/(dashboard)/measurements/a
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { AsyncCombobox } from "@/components/ui/async-combobox";
 import { useToast } from "@/components/ui/toaster";
 
 type Option = { id: string; label: string };
 
 export function MeasurementForm({
-  customers,
   garmentTypes
 }: {
-  customers: Option[];
   garmentTypes: Option[];
 }) {
   const [customerId, setCustomerId]       = useState("");
@@ -47,12 +45,12 @@ export function MeasurementForm({
 
   return (
     <form className="grid gap-3 md:grid-cols-2" onSubmit={handleSubmit}>
-      {/* Searchable customer dropdown */}
-      <SearchableSelect
+      {/* Searchable customer (server-backed, phone-first) */}
+      <AsyncCombobox
+        endpoint="/api/search/customers"
         value={customerId}
-        onChange={setCustomerId}
-        options={customers}
-        placeholder="Select customer…"
+        onSelect={(r) => setCustomerId(r?.id ?? "")}
+        placeholder="Search by phone or name…"
       />
 
       {/* Garment type */}

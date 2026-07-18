@@ -5,7 +5,6 @@ import { ActionButton } from "@/components/ui/action-button";
 import { PaymentForm } from "@/components/forms/payment-form";
 import { deletePaymentAction } from "@/app/(dashboard)/payments/actions";
 import { requireAuth } from "@/lib/auth/guards";
-import { paymentRepository } from "@/lib/repositories/payment-repository";
 import { prisma } from "@/lib/db/prisma";
 import { formatCurrency, toNumber } from "@/lib/utils";
 
@@ -16,28 +15,31 @@ export default async function PaymentsPage({
 }) {
   const session = await requireAuth();
   const params  = await searchParams;
-  const q       = params.q?.trim().toLowerCase() ?? "";
+  const q       = params.q?.trim() ?? "";
 
-  const [allPayments, orders, methods] = await Promise.all([
-    paymentRepository.listRecent(session.tenantId, 200),
-    prisma.order.findMany({
-      where:   { tenantId: session.tenantId },
-      include: { customer: true },
-      orderBy: { orderDate: "desc" }
+  // Default to the 15 most recent; searching queries the whole tenant server-side (max 50),
+  // so the page stays fast instead of loading every payment + every order into the browser.
+  const [payments, methods] = await Promise.all([
+    prisma.payment.findMany({
+      where: {
+        tenantId: session.tenantId,
+        ...(q
+          ? {
+              OR: [
+                { customer: { fullName: { contains: q } } },
+                { customer: { phone: { contains: q } } },
+                { order: { orderNumber: { contains: q } } },
+                { referenceNo: { contains: q } }
+              ]
+            }
+          : {})
+      },
+      include: { customer: true, order: true, paymentMethod: true },
+      orderBy: { paymentDate: "desc" },
+      take: q ? 50 : 15
     }),
     prisma.paymentMethod.findMany({ where: { tenantId: session.tenantId, isActive: true } })
   ]);
-
-  // client-safe server-side filter
-  const payments = q
-    ? allPayments.filter(
-        (p) =>
-          p.customer.fullName.toLowerCase().includes(q) ||
-          p.customer.phone.toLowerCase().includes(q) ||
-          p.order.orderNumber.toLowerCase().includes(q) ||
-          (p.referenceNo?.toLowerCase().includes(q) ?? false)
-      )
-    : allPayments;
 
   return (
     <div className="space-y-6">
@@ -66,11 +68,6 @@ export default async function PaymentsPage({
       <Card>
         <p className="mb-4 text-sm font-semibold">Record New Payment</p>
         <PaymentForm
-          orders={orders.map((order) => ({
-            id:         order.id,
-            customerId: order.customerId,
-            label:      `${order.customer.phone} · ${order.customer.fullName} · ${order.orderNumber}`
-          }))}
           paymentMethods={methods.map((m) => ({ id: m.id, label: m.label }))}
         />
       </Card>
@@ -91,11 +88,11 @@ export default async function PaymentsPage({
         )}
       </form>
 
-      {q && (
-        <p className="text-sm text-[var(--muted)]">
-          {payments.length} result{payments.length !== 1 ? "s" : ""} for <strong>"{q}"</strong>
-        </p>
-      )}
+      <p className="text-sm text-[var(--muted)]">
+        {q
+          ? `${payments.length} result${payments.length !== 1 ? "s" : ""} for "${q}"${payments.length === 50 ? " · showing first 50, refine to narrow" : ""}`
+          : "Showing the 15 most recent payments — search above to find any payment."}
+      </p>
 
       {/* Payments table */}
       <DataTable

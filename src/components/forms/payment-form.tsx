@@ -6,15 +6,14 @@ import { createPaymentAction } from "@/app/(dashboard)/payments/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { AsyncCombobox } from "@/components/ui/async-combobox";
 import { useToast } from "@/components/ui/toaster";
 
 type Option = { id: string; label: string };
 
 export function PaymentForm({
-  orders,
   paymentMethods
 }: {
-  orders: Array<{ id: string; label: string; customerId: string }>;
   paymentMethods: Option[];
 }) {
   const router                          = useRouter();
@@ -22,9 +21,8 @@ export function PaymentForm({
   const [message, setMessage]           = useState<string | null>(null);
   const toast                           = useToast();
   const [orderId, setOrderId]           = useState("");
+  const [customerId, setCustomerId]     = useState("");
   const [methodId, setMethodId]         = useState("");
-
-  const selectedOrder = orders.find((o) => o.id === orderId);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,7 +33,7 @@ export function PaymentForm({
       try {
         await createPaymentAction({
           orderId,
-          customerId:      selectedOrder?.customerId,
+          customerId,
           paymentMethodId: methodId,
           amount:      Number(form.get("amount")      ?? 0),
           referenceNo: String(form.get("referenceNo") ?? ""),
@@ -54,10 +52,10 @@ export function PaymentForm({
 
   return (
     <form className="grid gap-3 md:grid-cols-4" onSubmit={submit}>
-      <SearchableSelect
+      <AsyncCombobox
+        endpoint="/api/search/orders"
         value={orderId}
-        onChange={setOrderId}
-        options={orders.map((o) => ({ id: o.id, label: o.label }))}
+        onSelect={(r) => { setOrderId(r?.id ?? ""); setCustomerId((r?.customerId as string) ?? ""); }}
         placeholder="Search order by phone, name, or number…"
         className="md:col-span-2"
       />

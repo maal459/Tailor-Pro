@@ -1,26 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { AsyncCombobox } from "@/components/ui/async-combobox";
 
-type Option = { id: string; label: string };
-
+/**
+ * Navigate-on-select customer picker (ledger, order history). Server-backed search, so it
+ * doesn't load every customer into the page. `initialLabel` shows the current selection.
+ */
 export function CustomerHistorySelector({
-  customers,
   selectedId,
+  initialLabel = "",
   basePath = "/orders/history"
 }: {
-  customers: Option[];
   selectedId: string;
+  initialLabel?: string;
   basePath?: string;
 }) {
   const router = useRouter();
 
   return (
-    <SearchableSelect
+    <AsyncCombobox
+      endpoint="/api/search/customers"
       value={selectedId}
-      onChange={(value) => router.push(`${basePath}?customerId=${value}`)}
-      options={customers}
+      initialLabel={initialLabel}
+      onSelect={(r) => { if (r) router.push(`${basePath}?customerId=${r.id}`); }}
       placeholder="Search by phone or name…"
       className="min-w-72 flex-1"
     />
