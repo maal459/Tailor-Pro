@@ -19,23 +19,28 @@ export default async function ExpenseReportPage({
   const period = parseReportPeriod(params.period);
   const { from, to } = getReportRange(period, params.from, params.to);
 
-  const [expenses, categories] = await Promise.all([
+  // Totals and the category breakdown aggregate in the DB over the full period;
+  // the details table only shows the latest 20 rows.
+  const where = { tenantId: session.tenantId, expenseDate: { gte: from, lte: to } };
+  const [expenses, categories, totals, grouped] = await Promise.all([
     prisma.expense.findMany({
-      where: { tenantId: session.tenantId, expenseDate: { gte: from, lte: to } },
+      where,
       include: { category: true, paymentMethod: true },
-      orderBy: { expenseDate: "desc" }
+      orderBy: { expenseDate: "desc" },
+      take: 20
     }),
-    prisma.expenseCategory.findMany({ where: { tenantId: session.tenantId } })
+    prisma.expenseCategory.findMany({ where: { tenantId: session.tenantId } }),
+    prisma.expense.aggregate({ where, _sum: { amount: true }, _count: { _all: true } }),
+    prisma.expense.groupBy({ by: ["categoryId"], where, _sum: { amount: true } })
   ]);
 
-  const totalAmount = expenses.reduce((sum, expense) => sum + toNumber(expense.amount), 0);
+  const totalAmount = toNumber(totals._sum.amount ?? 0);
+  const entryCount = totals._count._all;
 
-  const categoryTotals = new Map<string, number>();
-  for (const expense of expenses) {
-    const name = expense.category?.name ?? "Uncategorized";
-    categoryTotals.set(name, (categoryTotals.get(name) ?? 0) + toNumber(expense.amount));
-  }
-  const byCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1]);
+  const categoryName = new Map(categories.map((c) => [c.id, c.name]));
+  const byCategory = grouped
+    .map((g) => [g.categoryId ? categoryName.get(g.categoryId) ?? "Uncategorized" : "Uncategorized", toNumber(g._sum.amount ?? 0)] as [string, number])
+    .sort((a, b) => b[1] - a[1]);
 
   return (
     <div className="space-y-6">
@@ -58,8 +63,8 @@ export default async function ExpenseReportPage({
       <ReportFilterBar basePath="/reports/expenses" period={period} from={from} to={to} />
 
       <p className="text-sm text-[var(--muted)]">
-        {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")} · {expenses.length} expense
-        {expenses.length !== 1 ? "s" : ""}
+        {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")} · {entryCount} expense
+        {entryCount !== 1 ? "s" : ""}
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -69,7 +74,7 @@ export default async function ExpenseReportPage({
         </Card>
         <Card>
           <p className="text-sm text-[var(--muted)]">Entries</p>
-          <p className="mt-2 text-2xl font-semibold">{expenses.length}</p>
+          <p className="mt-2 text-2xl font-semibold">{entryCount}</p>
         </Card>
         <Card>
           <p className="text-sm text-[var(--muted)]">Categories Used</p>
@@ -78,7 +83,7 @@ export default async function ExpenseReportPage({
         <Card>
           <p className="text-sm text-[var(--muted)]">Avg per Entry</p>
           <p className="mt-2 text-2xl font-semibold">
-            {formatCurrency(expenses.length ? totalAmount / expenses.length : 0)}
+            {formatCurrency(entryCount ? totalAmount / entryCount : 0)}
           </p>
         </Card>
       </div>
@@ -118,7 +123,10 @@ export default async function ExpenseReportPage({
       </div>
 
       <Card>
-        <h2 className="mb-4 text-lg font-semibold">Expense Details</h2>
+        <h2 className="mb-1 text-lg font-semibold">Expense Details</h2>
+        <p className="mb-4 text-xs text-[var(--muted)]">
+          Showing the 20 most recent — totals above cover the whole period.
+        </p>
         <DataTable
           headers={["Date", "Title", "Category", "Method", "Amount"]}
           emptyMessage="No expenses in this period."

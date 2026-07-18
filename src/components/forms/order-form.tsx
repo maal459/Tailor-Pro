@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { createOrderAction } from "@/app/(dashboard)/orders/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,6 @@ type Option = { id: string; label: string };
 
 type Props = {
   garmentTypes: Option[];
-  profiles: Array<{ id: string; customerId: string; label: string }>;
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -24,11 +23,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export function OrderForm({ garmentTypes, profiles }: Props) {
+export function OrderForm({ garmentTypes }: Props) {
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
 
   const [customerId, setCustomerId] = useState("");
+  const [customerProfiles, setCustomerProfiles] = useState<Option[]>([]);
   const [item, setItem] = useState({
     garmentTypeId: "",
     measurementProfileId: "",
@@ -39,11 +39,17 @@ export function OrderForm({ garmentTypes, profiles }: Props) {
     tailoringInstructions: ""
   });
 
-  // Only show profiles that belong to the selected customer
-  const customerProfiles = useMemo(
-    () => profiles.filter((p) => p.customerId === customerId),
-    [profiles, customerId]
-  );
+  // Fetch the selected customer's profiles on demand instead of shipping every
+  // profile in the tenant to the browser.
+  useEffect(() => {
+    if (!customerId) { setCustomerProfiles([]); return; }
+    let cancelled = false;
+    fetch(`/api/search/profiles?customerId=${encodeURIComponent(customerId)}`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Option[]) => { if (!cancelled) setCustomerProfiles(data); })
+      .catch(() => { if (!cancelled) setCustomerProfiles([]); });
+    return () => { cancelled = true; };
+  }, [customerId]);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

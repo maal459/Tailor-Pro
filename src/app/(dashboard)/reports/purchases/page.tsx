@@ -19,24 +19,33 @@ export default async function PurchaseReportPage({
   const period = parseReportPeriod(params.period);
   const { from, to } = getReportRange(period, params.from, params.to);
 
-  const purchases = await prisma.purchase.findMany({
-    where: { tenantId: session.tenantId, purchaseDate: { gte: from, lte: to } },
-    include: { supplier: true, items: true },
-    orderBy: { purchaseDate: "desc" }
-  });
+  // Totals and the supplier breakdown aggregate in the DB over the full period;
+  // the details table only shows the latest 20 rows.
+  const where = { tenantId: session.tenantId, purchaseDate: { gte: from, lte: to } };
+  const [purchases, totals, unitAgg, grouped, suppliers] = await Promise.all([
+    prisma.purchase.findMany({
+      where,
+      include: { supplier: true, items: true },
+      orderBy: { purchaseDate: "desc" },
+      take: 20
+    }),
+    prisma.purchase.aggregate({ where, _sum: { total: true }, _count: { _all: true } }),
+    prisma.purchaseItem.aggregate({
+      where: { tenantId: session.tenantId, purchase: { purchaseDate: { gte: from, lte: to } } },
+      _sum: { quantity: true }
+    }),
+    prisma.purchase.groupBy({ by: ["supplierId"], where, _sum: { total: true } }),
+    prisma.supplier.findMany({ where: { tenantId: session.tenantId }, select: { id: true, supplierName: true } })
+  ]);
 
-  const totalAmount = purchases.reduce((sum, purchase) => sum + toNumber(purchase.total), 0);
-  const totalUnits = purchases.reduce(
-    (sum, purchase) => sum + purchase.items.reduce((s, item) => s + item.quantity, 0),
-    0
-  );
+  const totalAmount = toNumber(totals._sum.total ?? 0);
+  const purchaseCount = totals._count._all;
+  const totalUnits = unitAgg._sum.quantity ?? 0;
 
-  const supplierTotals = new Map<string, number>();
-  for (const purchase of purchases) {
-    const name = purchase.supplier.supplierName;
-    supplierTotals.set(name, (supplierTotals.get(name) ?? 0) + toNumber(purchase.total));
-  }
-  const bySupplier = [...supplierTotals.entries()].sort((a, b) => b[1] - a[1]);
+  const supplierName = new Map(suppliers.map((s) => [s.id, s.supplierName]));
+  const bySupplier = grouped
+    .map((g) => [supplierName.get(g.supplierId) ?? "Unknown", toNumber(g._sum.total ?? 0)] as [string, number])
+    .sort((a, b) => b[1] - a[1]);
 
   return (
     <div className="space-y-6">
@@ -59,8 +68,8 @@ export default async function PurchaseReportPage({
       <ReportFilterBar basePath="/reports/purchases" period={period} from={from} to={to} />
 
       <p className="text-sm text-[var(--muted)]">
-        {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")} · {purchases.length} purchase
-        {purchases.length !== 1 ? "s" : ""}
+        {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")} · {purchaseCount} purchase
+        {purchaseCount !== 1 ? "s" : ""}
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -70,7 +79,7 @@ export default async function PurchaseReportPage({
         </Card>
         <Card>
           <p className="text-sm text-[var(--muted)]">Purchases</p>
-          <p className="mt-2 text-2xl font-semibold">{purchases.length}</p>
+          <p className="mt-2 text-2xl font-semibold">{purchaseCount}</p>
         </Card>
         <Card>
           <p className="text-sm text-[var(--muted)]">Units Received</p>
@@ -98,7 +107,10 @@ export default async function PurchaseReportPage({
       </Card>
 
       <Card>
-        <h2 className="mb-4 text-lg font-semibold">Purchase Details</h2>
+        <h2 className="mb-1 text-lg font-semibold">Purchase Details</h2>
+        <p className="mb-4 text-xs text-[var(--muted)]">
+          Showing the 20 most recent — totals above cover the whole period.
+        </p>
         <DataTable
           headers={["Date", "Invoice", "Supplier", "Items", "Total"]}
           emptyMessage="No purchases in this period."

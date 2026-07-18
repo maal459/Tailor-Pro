@@ -24,23 +24,29 @@ export default async function SalaryReportPage({
   const period = parseReportPeriod(params.period);
   const { from, to } = getReportRange(period, params.from, params.to);
 
-  const [salaries, activeEmployees] = await Promise.all([
+  // Totals and the per-employee breakdown aggregate in the DB over the full period;
+  // the details table only shows the latest 20 rows.
+  const where = { tenantId: session.tenantId, paymentDate: { gte: from, lte: to } };
+  const [salaries, activeEmployees, totals, grouped, employees] = await Promise.all([
     prisma.salary.findMany({
-      where: { tenantId: session.tenantId, paymentDate: { gte: from, lte: to } },
+      where,
       include: { employee: true },
-      orderBy: { paymentDate: "desc" }
+      orderBy: { paymentDate: "desc" },
+      take: 20
     }),
-    prisma.employee.count({ where: { tenantId: session.tenantId, isActive: true } })
+    prisma.employee.count({ where: { tenantId: session.tenantId, isActive: true } }),
+    prisma.salary.aggregate({ where, _sum: { amount: true }, _count: { _all: true } }),
+    prisma.salary.groupBy({ by: ["employeeId"], where, _sum: { amount: true } }),
+    prisma.employee.findMany({ where: { tenantId: session.tenantId }, select: { id: true, fullName: true } })
   ]);
 
-  const totalAmount = salaries.reduce((sum, salary) => sum + toNumber(salary.amount), 0);
+  const totalAmount = toNumber(totals._sum.amount ?? 0);
+  const salaryCount = totals._count._all;
 
-  const employeeTotals = new Map<string, number>();
-  for (const salary of salaries) {
-    const name = salary.employee.fullName;
-    employeeTotals.set(name, (employeeTotals.get(name) ?? 0) + toNumber(salary.amount));
-  }
-  const byEmployee = [...employeeTotals.entries()].sort((a, b) => b[1] - a[1]);
+  const employeeName = new Map(employees.map((e) => [e.id, e.fullName]));
+  const byEmployee = grouped
+    .map((g) => [employeeName.get(g.employeeId) ?? "Unknown", toNumber(g._sum.amount ?? 0)] as [string, number])
+    .sort((a, b) => b[1] - a[1]);
 
   return (
     <div className="space-y-6">
@@ -63,8 +69,8 @@ export default async function SalaryReportPage({
       <ReportFilterBar basePath="/reports/salaries" period={period} from={from} to={to} />
 
       <p className="text-sm text-[var(--muted)]">
-        {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")} · {salaries.length} payment
-        {salaries.length !== 1 ? "s" : ""}
+        {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")} · {salaryCount} payment
+        {salaryCount !== 1 ? "s" : ""}
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -74,7 +80,7 @@ export default async function SalaryReportPage({
         </Card>
         <Card>
           <p className="text-sm text-[var(--muted)]">Payments</p>
-          <p className="mt-2 text-2xl font-semibold">{salaries.length}</p>
+          <p className="mt-2 text-2xl font-semibold">{salaryCount}</p>
         </Card>
         <Card>
           <p className="text-sm text-[var(--muted)]">Employees Paid</p>
@@ -102,7 +108,10 @@ export default async function SalaryReportPage({
       </Card>
 
       <Card>
-        <h2 className="mb-4 text-lg font-semibold">Payment Details</h2>
+        <h2 className="mb-1 text-lg font-semibold">Payment Details</h2>
+        <p className="mb-4 text-xs text-[var(--muted)]">
+          Showing the 20 most recent — totals above cover the whole period.
+        </p>
         <DataTable
           headers={["Paid On", "Employee", "Salary Period", "Amount", "Notes"]}
           emptyMessage="No salary payments in this period."

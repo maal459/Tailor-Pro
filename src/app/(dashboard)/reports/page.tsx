@@ -27,21 +27,12 @@ function getRange(period: Period, fromParam?: string, toParam?: string) {
   }
 }
 
-type OrderRow = {
-  orderDate: Date;
-  customerId: string;
-  discountAmount: unknown;
-  customer: { fullName: string };
-  items: Array<{ quantity: number; unitPrice: unknown }>;
-};
-
-function buildChart(period: Period, orders: OrderRow[], from: Date, to: Date) {
+/** Chart from per-bucket revenue computed in SQL (keys: yyyy-MM for yearly, else yyyy-MM-dd). */
+function buildChart(period: Period, revenueByBucket: Map<string, number>, from: Date, to: Date) {
   if (period === "yearly") {
     return eachMonthOfInterval({ start: from, end: to }).map((month) => ({
       name: format(month, "MMM"),
-      revenue: orders
-        .filter((o) => format(o.orderDate, "yyyy-MM") === format(month, "yyyy-MM"))
-        .reduce((s, o) => s + o.items.reduce((a, i) => a + i.quantity * toNumber(i.unitPrice), 0) - toNumber(o.discountAmount), 0)
+      revenue: revenueByBucket.get(format(month, "yyyy-MM")) ?? 0
     }));
   }
   if (period === "daily") {
@@ -49,17 +40,13 @@ function buildChart(period: Period, orders: OrderRow[], from: Date, to: Date) {
       const day = subDays(new Date(), 6 - idx);
       return {
         name: format(day, "EEE"),
-        revenue: orders
-          .filter((o) => format(o.orderDate, "yyyy-MM-dd") === format(day, "yyyy-MM-dd"))
-          .reduce((s, o) => s + o.items.reduce((a, i) => a + i.quantity * toNumber(i.unitPrice), 0) - toNumber(o.discountAmount), 0)
+        revenue: revenueByBucket.get(format(day, "yyyy-MM-dd")) ?? 0
       };
     });
   }
   return eachDayOfInterval({ start: from, end: to }).slice(0, 60).map((day) => ({
     name: format(day, "d"),
-    revenue: orders
-      .filter((o) => format(o.orderDate, "yyyy-MM-dd") === format(day, "yyyy-MM-dd"))
-      .reduce((s, o) => s + o.items.reduce((a, i) => a + i.quantity * toNumber(i.unitPrice), 0) - toNumber(o.discountAmount), 0)
+    revenue: revenueByBucket.get(format(day, "yyyy-MM-dd")) ?? 0
   }));
 }
 
@@ -80,32 +67,78 @@ export default async function ReportsPage({
   const period  = (params.period ?? "monthly") as Period;
   const { from, to } = getRange(period, params.from, params.to);
 
-  const [orders, payments] = await Promise.all([
-    prisma.order.findMany({
-      where: { tenantId: session.tenantId, orderDate: { gte: from, lte: to } },
-      include: { items: true, customer: true }
+  // All figures are aggregated in the database — with years of history this page must
+  // never pull every order/payment row into Node.
+  const tenantId = session.tenantId;
+  const bucketFmt = period === "yearly" ? "%Y-%m" : "%Y-%m-%d";
+
+  const [payAgg, orderGroups, revenueRaw, bucketItemsRaw, bucketDiscRaw, topRaw] = await Promise.all([
+    prisma.payment.aggregate({
+      _sum: { amount: true },
+      _count: { _all: true },
+      where: { tenantId, paymentDate: { gte: from, lte: to } }
     }),
-    prisma.payment.findMany({
-      where: { tenantId: session.tenantId, paymentDate: { gte: from, lte: to } },
-      include: { customer: true }
-    })
+    prisma.order.groupBy({
+      by: ["customerId"],
+      _count: { _all: true },
+      where: { tenantId, orderDate: { gte: from, lte: to } }
+    }),
+    prisma.$queryRawUnsafe<any[]>(
+      `SELECT
+         (SELECT COALESCE(SUM(oi.quantity * oi.unitPrice), 0) FROM \`OrderItem\` oi
+            JOIN \`Order\` o ON o.id = oi.orderId
+           WHERE o.tenantId = ? AND o.orderDate BETWEEN ? AND ?) AS items,
+         (SELECT COALESCE(SUM(discountAmount), 0) FROM \`Order\`
+           WHERE tenantId = ? AND orderDate BETWEEN ? AND ?) AS discounts`,
+      tenantId, from, to, tenantId, from, to
+    ),
+    prisma.$queryRawUnsafe<any[]>(
+      `SELECT DATE_FORMAT(o.orderDate, ?) AS bucket, SUM(oi.quantity * oi.unitPrice) AS gross
+         FROM \`OrderItem\` oi JOIN \`Order\` o ON o.id = oi.orderId
+        WHERE o.tenantId = ? AND o.orderDate BETWEEN ? AND ?
+        GROUP BY bucket`,
+      bucketFmt, tenantId, from, to
+    ),
+    prisma.$queryRawUnsafe<any[]>(
+      `SELECT DATE_FORMAT(orderDate, ?) AS bucket, SUM(discountAmount) AS disc
+         FROM \`Order\` WHERE tenantId = ? AND orderDate BETWEEN ? AND ?
+        GROUP BY bucket`,
+      bucketFmt, tenantId, from, to
+    ),
+    prisma.$queryRawUnsafe<any[]>(
+      `SELECT c.fullName AS name, (COALESCE(it.t, 0) - COALESCE(d.t, 0)) AS total
+         FROM \`Customer\` c
+         JOIN (SELECT o.customerId cid, SUM(oi.quantity * oi.unitPrice) t
+                 FROM \`OrderItem\` oi JOIN \`Order\` o ON o.id = oi.orderId
+                WHERE o.tenantId = ? AND o.orderDate BETWEEN ? AND ? GROUP BY o.customerId) it ON it.cid = c.id
+         LEFT JOIN (SELECT customerId cid, SUM(discountAmount) t
+                 FROM \`Order\` WHERE tenantId = ? AND orderDate BETWEEN ? AND ? GROUP BY customerId) d ON d.cid = c.id
+        WHERE c.tenantId = ?
+        ORDER BY total DESC LIMIT 5`,
+      tenantId, from, to, tenantId, from, to, tenantId
+    )
   ]);
 
-  const totalRevenue    = orders.reduce((s, o) => s + o.items.reduce((a, i) => a + i.quantity * toNumber(i.unitPrice), 0) - toNumber(o.discountAmount), 0);
-  const amountCollected = payments.reduce((s, p) => s + toNumber(p.amount), 0);
+  const orderCount      = orderGroups.reduce((s, g) => s + g._count._all, 0);
+  const uniqueCustomers = orderGroups.length;
+  const paymentCount    = payAgg._count._all;
+  const totalRevenue    = toNumber(revenueRaw[0]?.items) - toNumber(revenueRaw[0]?.discounts);
+  const amountCollected = toNumber(payAgg._sum.amount ?? 0);
   const outstanding     = totalRevenue - amountCollected;
-  const avgOrderValue   = orders.length ? totalRevenue / orders.length : 0;
+  const avgOrderValue   = orderCount ? totalRevenue / orderCount : 0;
 
-  const customerMap = new Map<string, number>();
-  for (const o of orders) {
-    const v = o.items.reduce((s, i) => s + i.quantity * toNumber(i.unitPrice), 0) - toNumber(o.discountAmount);
-    customerMap.set(o.customer.fullName, (customerMap.get(o.customer.fullName) ?? 0) + v);
+  const revenueByBucket = new Map<string, number>();
+  for (const r of bucketItemsRaw) revenueByBucket.set(String(r.bucket), toNumber(r.gross));
+  for (const r of bucketDiscRaw) {
+    const key = String(r.bucket);
+    revenueByBucket.set(key, (revenueByBucket.get(key) ?? 0) - toNumber(r.disc));
   }
-  const topCustomers = [...customerMap.entries()]
-    .sort((a, b) => b[1] - a[1]).slice(0, 5)
-    .map(([name, total]) => ({ name, total }));
 
-  const chartData = buildChart(period, orders, from, to);
+  const topCustomers = topRaw
+    .map((r) => ({ name: String(r.name), total: toNumber(r.total) }))
+    .filter((c) => c.total > 0);
+
+  const chartData = buildChart(period, revenueByBucket, from, to);
 
   const chartTitle =
     period === "yearly" ? "Revenue by Month" :
@@ -166,7 +199,7 @@ export default async function ReportsPage({
 
       <p className="text-sm text-[var(--muted)]">
         {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")}
-        {" "}· {orders.length} orders
+        {" "}· {orderCount} orders
       </p>
 
       {/* KPI cards */}
@@ -176,10 +209,10 @@ export default async function ReportsPage({
           { label: "Amount Collected",    value: formatCurrency(amountCollected) },
           { label: "Outstanding Balance", value: formatCurrency(outstanding)     },
           { label: "Avg Order Value",     value: formatCurrency(avgOrderValue)   },
-          { label: "Total Orders",        value: String(orders.length)           },
-          { label: "Payments Received",   value: String(payments.length)         },
-          { label: "Unique Customers",    value: String(new Set(orders.map((o) => o.customerId)).size) },
-          { label: "Transactions",        value: String(payments.length + orders.length) },
+          { label: "Total Orders",        value: String(orderCount)              },
+          { label: "Payments Received",   value: String(paymentCount)            },
+          { label: "Unique Customers",    value: String(uniqueCustomers)         },
+          { label: "Transactions",        value: String(paymentCount + orderCount) },
         ].map(({ label, value }) => (
           <Card key={label}>
             <p className="text-sm text-[var(--muted)]">{label}</p>

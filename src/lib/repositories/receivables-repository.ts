@@ -52,7 +52,9 @@ export async function getReceivables(
 ): Promise<{ rows: ReceivableRow[]; totalOutstanding: number; customerCount: number }> {
   const q = opts.q?.trim() ?? "";
   const like = `%${q}%`;
-  const limit = opts.limit ?? 200;
+  // Only the top rows are returned; the total/count row aggregates the FULL set in SQL,
+  // so the bottom-line figure is always complete regardless of the display limit.
+  const limit = opts.limit ?? 20;
   const params = [
     tenantId, opts.from, opts.to,
     tenantId, opts.from, opts.to,

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/table";
 import { PrintButton } from "@/components/ui/print-button";
+import { CustomerHistorySelector } from "@/components/forms/customer-history-selector";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { formatCurrency, toNumber } from "@/lib/utils";
@@ -14,15 +15,13 @@ export default async function PaymentHistoryPage({
   const session = await requireAuth();
   const params  = await searchParams;
 
-  const customers = await prisma.customer.findMany({
-    where:   { tenantId: session.tenantId },
-    orderBy: { fullName: "asc" }
-  });
-
   const selectedId = params.customerId ?? "";
 
-  const [payments, orders] = selectedId
+  // Per-customer data only — the customer picker searches server-side, so this page
+  // never loads the whole customer list.
+  const [customer, payments, orders] = selectedId
     ? await Promise.all([
+        prisma.customer.findFirst({ where: { id: selectedId, tenantId: session.tenantId } }),
         prisma.payment.findMany({
           where:   { tenantId: session.tenantId, customerId: selectedId },
           include: { order: true, paymentMethod: true },
@@ -33,9 +32,7 @@ export default async function PaymentHistoryPage({
           include: { items: true }
         })
       ])
-    : [[], []];
-
-  const customer = customers.find((c) => c.id === selectedId);
+    : [null, [], []];
 
   const totalOrdered = orders.reduce((sum, o) => {
     return sum + o.items.reduce((s, i) => s + i.quantity * toNumber(i.unitPrice), 0) - toNumber(o.discountAmount);
@@ -61,25 +58,13 @@ export default async function PaymentHistoryPage({
         {selectedId && <PrintButton label="Print History" />}
       </div>
 
-      {/* customer selector */}
+      {/* customer selector (server-backed, phone-first) */}
       <Card className="print:hidden">
-        <form className="flex flex-wrap gap-2" method="get">
-          <select
-            name="customerId"
-            defaultValue={selectedId}
-            className="h-10 min-w-64 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm focus:outline-none"
-          >
-            <option value="">Select a customer…</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.customerNumber} – {c.fullName}
-              </option>
-            ))}
-          </select>
-          <button className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm text-white">
-            Load History
-          </button>
-        </form>
+        <CustomerHistorySelector
+          basePath="/payments/history"
+          selectedId={selectedId}
+          initialLabel={customer ? `${customer.phone} · ${customer.fullName}` : ""}
+        />
       </Card>
 
       {customer && (

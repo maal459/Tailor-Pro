@@ -11,10 +11,12 @@ export default async function MeasurementsPage() {
 
   const [garmentTypes, profiles] = await Promise.all([
     prisma.garmentType.findMany({ where: { tenantId: session.tenantId, isActive: true }, orderBy: { name: "asc" } }),
+    // Latest 20 only — a specific customer's profiles are reached via their customer page.
     prisma.measurementProfile.findMany({
       where: { tenantId: session.tenantId },
       include: { customer: true, garmentType: true, fields: true },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      take: 20
     })
   ]);
 
@@ -22,7 +24,9 @@ export default async function MeasurementsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Measurements</h1>
-        <p className="text-sm text-[var(--muted)]">Store and reuse profile-based measurements per garment</p>
+        <p className="text-sm text-[var(--muted)]">
+          Store and reuse profile-based measurements per garment · showing the 20 most recent
+        </p>
       </div>
 
       <Card>
