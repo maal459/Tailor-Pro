@@ -91,7 +91,7 @@ export function OrderForm({ customers, garmentTypes, profiles }: Props) {
               value={customerId}
               onChange={(v) => { setCustomerId(v); setItem((prev) => ({ ...prev, measurementProfileId: "" })); }}
               options={customers}
-              placeholder="Search customer…"
+              placeholder="Search by phone or name…"
             />
           </Field>
 

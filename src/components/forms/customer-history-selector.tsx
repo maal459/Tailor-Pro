@@ -7,19 +7,21 @@ type Option = { id: string; label: string };
 
 export function CustomerHistorySelector({
   customers,
-  selectedId
+  selectedId,
+  basePath = "/orders/history"
 }: {
   customers: Option[];
   selectedId: string;
+  basePath?: string;
 }) {
   const router = useRouter();
 
   return (
     <SearchableSelect
       value={selectedId}
-      onChange={(value) => router.push(`/orders/history?customerId=${value}`)}
+      onChange={(value) => router.push(`${basePath}?customerId=${value}`)}
       options={customers}
-      placeholder="Search customer name or number…"
+      placeholder="Search by phone or name…"
       className="min-w-72 flex-1"
     />
   );

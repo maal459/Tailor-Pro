@@ -62,7 +62,7 @@ export default async function OrderHistoryPage({
             <CustomerHistorySelector
               customers={customers.map((customer) => ({
                 id: customer.id,
-                label: `${customer.customerNumber} - ${customer.fullName} (${customer.phone})`
+                label: `${customer.phone} · ${customer.fullName}`
               }))}
               selectedId={selectedCustomerId}
             />

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { financeService } from "@/lib/services/finance-service";
 import { formatCurrency } from "@/lib/utils";
 import { PrintButton } from "@/components/ui/print-button";
+import { CustomerHistorySelector } from "@/components/forms/customer-history-selector";
 
 export default async function LedgerPage({
   searchParams
@@ -32,21 +33,17 @@ export default async function LedgerPage({
       </div>
 
       <Card>
-        <form className="flex flex-wrap gap-2" method="get">
-          <select
-            name="customerId"
-            defaultValue={selectedCustomerId}
-            className="h-10 min-w-72 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
-          >
-            {customers.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.customerNumber} - {customer.fullName}
-              </option>
-            ))}
-          </select>
-          <button className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm text-white">Load Ledger</button>
+        <div className="flex flex-wrap items-center gap-2">
+          <CustomerHistorySelector
+            basePath="/ledger"
+            selectedId={selectedCustomerId ?? ""}
+            customers={customers.map((customer) => ({
+              id: customer.id,
+              label: `${customer.phone} · ${customer.fullName}`
+            }))}
+          />
           <PrintButton />
-        </form>
+        </div>
       </Card>
 
       <DataTable headers={["Date", "Description", "Debit", "Credit", "Balance"]}>

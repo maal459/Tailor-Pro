@@ -30,7 +30,7 @@ export default async function MeasurementsPage() {
         <MeasurementForm
           customers={customers.map((c) => ({
             id: c.id,
-            label: `${c.customerNumber} – ${c.fullName} (${c.phone})`
+            label: `${c.phone} · ${c.fullName}`
           }))}
           garmentTypes={garmentTypes.map((gt) => ({ id: gt.id, label: gt.name }))}
         />

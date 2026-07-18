@@ -47,7 +47,7 @@ export default async function OrdersPage({
         <OrderForm
           customers={customers.map((customer) => ({
             id: customer.id,
-            label: `${customer.customerNumber} - ${customer.fullName}`
+            label: `${customer.phone} · ${customer.fullName}`
           }))}
           garmentTypes={garmentTypes.map((garmentType) => ({ id: garmentType.id, label: garmentType.name }))}
           profiles={profiles.map((profile) => ({

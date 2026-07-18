@@ -33,6 +33,7 @@ export default async function PaymentsPage({
     ? allPayments.filter(
         (p) =>
           p.customer.fullName.toLowerCase().includes(q) ||
+          p.customer.phone.toLowerCase().includes(q) ||
           p.order.orderNumber.toLowerCase().includes(q) ||
           (p.referenceNo?.toLowerCase().includes(q) ?? false)
       )
@@ -68,7 +69,7 @@ export default async function PaymentsPage({
           orders={orders.map((order) => ({
             id:         order.id,
             customerId: order.customerId,
-            label:      `${order.orderNumber} - ${order.customer.fullName}`
+            label:      `${order.customer.phone} · ${order.customer.fullName} · ${order.orderNumber}`
           }))}
           paymentMethods={methods.map((m) => ({ id: m.id, label: m.label }))}
         />
@@ -79,7 +80,7 @@ export default async function PaymentsPage({
         <input
           name="q"
           defaultValue={q}
-          placeholder="Search by customer name, order number, or reference…"
+          placeholder="Search by phone, customer name, order number, or reference…"
           className="h-10 w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm focus:border-[var(--primary)] focus:outline-none"
         />
         <button className="rounded-xl bg-[var(--primary)] px-4 text-sm text-white">Search</button>

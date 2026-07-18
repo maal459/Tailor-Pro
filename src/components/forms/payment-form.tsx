@@ -58,7 +58,7 @@ export function PaymentForm({
         value={orderId}
         onChange={setOrderId}
         options={orders.map((o) => ({ id: o.id, label: o.label }))}
-        placeholder="Select order…"
+        placeholder="Search order by phone, name, or number…"
         className="md:col-span-2"
       />
 
