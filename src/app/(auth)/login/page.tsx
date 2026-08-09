@@ -19,11 +19,7 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting }
   } = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "admin@tailorpro.local",
-      password: "admin12345"
-    }
+    resolver: zodResolver(loginSchema)
   });
 
   const onSubmit = async (values: LoginInput) => {
