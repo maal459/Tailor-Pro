@@ -8,6 +8,7 @@ import { ActionButton } from "@/components/ui/action-button";
 import { requirePermission } from "@/lib/auth/guards";
 import { employeeRepository } from "@/lib/repositories/employee-repository";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 import { createEmployeeAction, deleteEmployeeAction } from "@/app/(dashboard)/employees/actions";
 
 const PAGE_SIZE = 10;
@@ -18,6 +19,7 @@ export default async function EmployeesPage({
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const session = await requirePermission("employees.manage");
+  const t = await getT();
   const params = await searchParams;
   const q = params.q?.trim();
   const page = Math.max(1, Number(params.page ?? "1") || 1);
@@ -29,42 +31,42 @@ export default async function EmployeesPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">Employees</h1>
-          <p className="text-sm text-[var(--muted)]">Manage staff and monthly salaries</p>
+          <h1 className="text-2xl font-semibold">{t("Employees")}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Manage staff and monthly salaries")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
             href="/employees/salaries"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            Salary Payments
+            {t("Salary Payments")}
           </Link>
           <Link
             href="/reports/salaries"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            Salary Report
+            {t("Salary Report")}
           </Link>
         </div>
       </div>
 
       {/* Add employee */}
       <Card>
-        <p className="mb-4 text-sm font-semibold">Add Employee</p>
+        <p className="mb-4 text-sm font-semibold">{t("Add Employee")}</p>
         <form className="grid gap-3 md:grid-cols-4" action={createEmployeeAction}>
-          <Input name="fullName" placeholder="Full name *" required />
-          <Input name="phone" placeholder="Phone" />
-          <Input name="position" placeholder="Position (e.g. Tailor)" />
+          <Input name="fullName" placeholder={t("Full name *")} required />
+          <Input name="phone" placeholder={t("Phone")} />
+          <Input name="position" placeholder={t("Position (e.g. Tailor)")} />
           <Input
             name="monthlySalary"
             type="number"
             min={0.01}
             step="0.01"
-            placeholder="Monthly salary *"
+            placeholder={t("Monthly salary *")}
             required
           />
           <Button type="submit" className="md:w-fit">
-            Add Employee
+            {t("Add Employee")}
           </Button>
         </form>
       </Card>
@@ -72,9 +74,9 @@ export default async function EmployeesPage({
       {/* Search and list */}
       <Card>
         <form className="mb-4 flex gap-2" method="get">
-          <Input name="q" placeholder="Search name, phone, or position" defaultValue={q} />
+          <Input name="q" placeholder={t("Search name, phone, or position")} defaultValue={q} />
           <Button variant="secondary" type="submit">
-            Search
+            {t("Search")}
           </Button>
         </form>
 
@@ -102,19 +104,19 @@ export default async function EmployeesPage({
                         href={`/employees/salaries?employeeId=${employee.id}`}
                         className="rounded-lg bg-[var(--primary)]/10 px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/20"
                       >
-                        Salaries
+                        {t("Salaries")}
                       </Link>
                       <Link
                         href={`/employees/${employee.id}/edit`}
                         className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
                       >
-                        Edit
+                        {t("Edit")}
                       </Link>
                       <ActionButton
-                        label="Delete"
-                        confirmText={`Delete employee "${employee.fullName}"?`}
+                        label={t("Delete")}
+                        confirmText={t("Delete employee \"{name}\"?", { name: employee.fullName })}
                         action={deleteEmployeeAction.bind(null, employee.id)}
-                        successMessage="Employee deleted"
+                        successMessage={t("Employee deleted")}
                         className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
                       />
                     </div>
@@ -126,20 +128,21 @@ export default async function EmployeesPage({
 
         <div className="mt-4 flex items-center justify-between text-sm">
           <p>
-            Page {page} of {pageCount} · {total} employee{total !== 1 ? "s" : ""}
+            {t("Page {page} of {pages}", { page, pages: pageCount })} ·{" "}
+            {t(total === 1 ? "{count} employee" : "{count} employees", { count: total })}
           </p>
           <div className="flex gap-2">
             <a
               className="rounded-lg border px-3 py-1"
               href={`/employees?page=${Math.max(1, page - 1)}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
             >
-              Prev
+              {t("Prev")}
             </a>
             <a
               className="rounded-lg border px-3 py-1"
               href={`/employees?page=${Math.min(pageCount, page + 1)}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
             >
-              Next
+              {t("Next")}
             </a>
           </div>
         </div>

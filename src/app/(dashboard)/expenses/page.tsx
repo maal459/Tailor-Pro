@@ -9,6 +9,7 @@ import { requirePermission } from "@/lib/auth/guards";
 import { expenseRepository } from "@/lib/repositories/expense-repository";
 import { prisma } from "@/lib/db/prisma";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 import {
   createExpenseAction,
   createExpenseCategoryAction,
@@ -24,6 +25,7 @@ export default async function ExpensesPage({
   searchParams: Promise<{ q?: string; categoryId?: string; from?: string; to?: string; page?: string }>;
 }) {
   const session = await requirePermission("expenses.manage");
+  const t = await getT();
   const params = await searchParams;
   const q = params.q?.trim();
   const categoryId = params.categoryId?.trim();
@@ -63,26 +65,26 @@ export default async function ExpensesPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">Expenses</h1>
-          <p className="text-sm text-[var(--muted)]">Track shop expenses and spending categories</p>
+          <h1 className="text-2xl font-semibold">{t("Expenses")}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Track shop expenses and spending categories")}</p>
         </div>
         <Link
           href="/reports/expenses"
           className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
         >
-          Expense Report
+          {t("Expense Report")}
         </Link>
       </div>
 
       {/* Record new expense */}
       <Card>
-        <p className="mb-4 text-sm font-semibold">Record New Expense</p>
+        <p className="mb-4 text-sm font-semibold">{t("Record New Expense")}</p>
         <form className="grid gap-3 md:grid-cols-3" action={createExpenseAction}>
-          <Input name="title" placeholder="Expense title *" required />
-          <Input name="amount" type="number" min={0.01} step="0.01" placeholder="Amount *" required />
+          <Input name="title" placeholder={t("Expense title *")} required />
+          <Input name="amount" type="number" min={0.01} step="0.01" placeholder={t("Amount *")} required />
           <Input name="expenseDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
           <Select name="categoryId" defaultValue="">
-            <option value="">No category</option>
+            <option value="">{t("No category")}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -90,28 +92,28 @@ export default async function ExpensesPage({
             ))}
           </Select>
           <Select name="paymentMethodId" defaultValue="">
-            <option value="">No payment method</option>
+            <option value="">{t("No payment method")}</option>
             {methods.map((method) => (
               <option key={method.id} value={method.id}>
                 {method.label}
               </option>
             ))}
           </Select>
-          <Input name="notes" placeholder="Notes" />
+          <Input name="notes" placeholder={t("Notes")} />
           <Button type="submit" className="md:col-span-3 md:w-fit">
-            Add Expense
+            {t("Add Expense")}
           </Button>
         </form>
       </Card>
 
       {/* Expense categories */}
       <Card>
-        <p className="mb-4 text-sm font-semibold">Expense Categories</p>
+        <p className="mb-4 text-sm font-semibold">{t("Expense Categories")}</p>
         <form className="mb-4 grid gap-3 md:grid-cols-3" action={createExpenseCategoryAction}>
-          <Input name="name" placeholder="Category name *" required />
-          <Input name="description" placeholder="Description" />
+          <Input name="name" placeholder={t("Category name *")} required />
+          <Input name="description" placeholder={t("Description")} />
           <Button variant="secondary" type="submit" className="md:w-fit">
-            Add Category
+            {t("Add Category")}
           </Button>
         </form>
         <div className="flex flex-wrap gap-2">
@@ -123,15 +125,15 @@ export default async function ExpensesPage({
               {category.name}
               <ActionButton
                 label="×"
-                confirmText={`Delete category "${category.name}"? Expenses keep their records without a category.`}
+                confirmText={t("Delete category \"{name}\"? Expenses keep their records without a category.", { name: category.name })}
                 action={deleteExpenseCategoryAction.bind(null, category.id)}
-                successMessage="Category deleted"
+                successMessage={t("Category deleted")}
                 className="text-red-500 hover:text-red-700"
               />
             </span>
           ))}
           {!categories.length && (
-            <p className="text-sm text-[var(--muted)]">No categories yet. Add one above.</p>
+            <p className="text-sm text-[var(--muted)]">{t("No categories yet. Add one above.")}</p>
           )}
         </div>
       </Card>
@@ -139,9 +141,9 @@ export default async function ExpensesPage({
       {/* Search, filters, and list */}
       <Card>
         <form className="mb-4 grid gap-3 md:grid-cols-5" method="get">
-          <Input name="q" placeholder="Search title or notes" defaultValue={q} />
+          <Input name="q" placeholder={t("Search title or notes")} defaultValue={q} />
           <Select name="categoryId" defaultValue={categoryId ?? ""}>
-            <option value="">All categories</option>
+            <option value="">{t("All categories")}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -152,14 +154,14 @@ export default async function ExpensesPage({
           <Input name="to" type="date" defaultValue={to} />
           <div className="flex gap-2">
             <Button variant="secondary" type="submit">
-              Filter
+              {t("Filter")}
             </Button>
             {(q || categoryId || from || to) && (
               <Link
                 href="/expenses"
                 className="inline-flex items-center rounded-xl border border-[var(--border)] px-4 py-2 text-sm"
               >
-                Clear
+                {t("Clear")}
               </Link>
             )}
           </div>
@@ -188,13 +190,13 @@ export default async function ExpensesPage({
                         href={`/expenses/${expense.id}/edit`}
                         className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
                       >
-                        Edit
+                        {t("Edit")}
                       </Link>
                       <ActionButton
-                        label="Delete"
-                        confirmText={`Delete expense "${expense.title}"?`}
+                        label={t("Delete")}
+                        confirmText={t("Delete expense \"{title}\"?", { title: expense.title })}
                         action={deleteExpenseAction.bind(null, expense.id)}
-                        successMessage="Expense deleted"
+                        successMessage={t("Expense deleted")}
                         className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
                       />
                     </div>
@@ -206,14 +208,15 @@ export default async function ExpensesPage({
 
         <div className="mt-4 flex items-center justify-between text-sm">
           <p>
-            Page {page} of {pageCount} · {total} expense{total !== 1 ? "s" : ""}
+            {t("Page {page} of {pages}", { page, pages: pageCount })} ·{" "}
+            {t(total === 1 ? "{count} expense" : "{count} expenses", { count: total })}
           </p>
           <div className="flex gap-2">
             <a className="rounded-lg border px-3 py-1" href={pageHref(Math.max(1, page - 1))}>
-              Prev
+              {t("Prev")}
             </a>
             <a className="rounded-lg border px-3 py-1" href={pageHref(Math.min(pageCount, page + 1))}>
-              Next
+              {t("Next")}
             </a>
           </div>
         </div>

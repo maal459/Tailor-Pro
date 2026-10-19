@@ -8,6 +8,7 @@ import { customerRepository } from "@/lib/repositories/customer-repository";
 import { assertWithinPlanLimit } from "@/lib/billing/limits";
 import { prisma } from "@/lib/db/prisma";
 import { logActivity } from "@/lib/activity-log";
+import { getT } from "@/lib/i18n/server";
 
 export async function createCustomerAction(formData: FormData) {
   const session = await requireAuth();
@@ -24,7 +25,8 @@ export async function createCustomerAction(formData: FormData) {
 
   const parsed = createCustomerSchema.safeParse(payload);
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid customer data");
+    const t = await getT();
+    throw new Error(t(parsed.error.issues[0]?.message ?? "Invalid customer data"));
   }
 
   // Enforce the tenant's subscription plan cap on customers.
@@ -53,12 +55,13 @@ export async function updateCustomerAction(customerId: string, formData: FormDat
     city: String(formData.get("city") ?? ""),
     notes: String(formData.get("notes") ?? "")
   });
+  const t = await getT();
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid customer data");
+    throw new Error(t(parsed.error.issues[0]?.message ?? "Invalid customer data"));
   }
 
   const existing = await customerRepository.byId(session.tenantId, customerId);
-  if (!existing) throw new Error("Customer not found");
+  if (!existing) throw new Error(t("Customer not found"));
 
   await customerRepository.update(session.tenantId, customerId, {
     fullName: parsed.data.fullName,
@@ -86,16 +89,17 @@ export async function updateCustomerAction(customerId: string, formData: FormDat
 
 export async function deleteCustomerAction(customerId: string) {
   const session = await requireAuth();
+  const t = await getT();
 
   const existing = await customerRepository.byId(session.tenantId, customerId);
-  if (!existing) throw new Error("Customer not found");
+  if (!existing) throw new Error(t("Customer not found"));
 
   const [orderCount, paymentCount] = await Promise.all([
     prisma.order.count({ where: { tenantId: session.tenantId, customerId } }),
     prisma.payment.count({ where: { tenantId: session.tenantId, customerId } })
   ]);
   if (orderCount > 0 || paymentCount > 0) {
-    throw new Error("Customer has orders or payments and cannot be deleted.");
+    throw new Error(t("Customer has orders or payments and cannot be deleted."));
   }
 
   await customerRepository.remove(session.tenantId, customerId);

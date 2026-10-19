@@ -6,6 +6,7 @@ import { requireAuth } from "@/lib/auth/guards";
 import { createOrderSchema } from "@/lib/validators/order";
 import { orderRepository } from "@/lib/repositories/order-repository";
 import { prisma } from "@/lib/db/prisma";
+import { getT } from "@/lib/i18n/server";
 
 const ORDER_STATES = ["PENDING", "CUTTING", "SEWING", "FINISHING", "READY", "DELIVERED", "CANCELLED"];
 const PRIORITIES = ["LOW", "NORMAL", "HIGH", "URGENT"];
@@ -15,7 +16,8 @@ export async function createOrderAction(input: unknown) {
   const parsed = createOrderSchema.safeParse(input);
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid order data");
+    const t = await getT();
+    throw new Error(t(parsed.error.issues[0]?.message ?? "Invalid order data"));
   }
 
   const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
@@ -49,11 +51,12 @@ export async function updateOrderAction(orderId: string, formData: FormData) {
   const deliveryDate = String(formData.get("deliveryDate") ?? "");
   const discountAmount = Number(formData.get("discountAmount") ?? 0);
   const notes = String(formData.get("notes") ?? "");
-  if (!ORDER_STATES.includes(status)) throw new Error("Invalid status");
-  if (!PRIORITIES.includes(priority)) throw new Error("Invalid priority");
+  const t = await getT();
+  if (!ORDER_STATES.includes(status)) throw new Error(t("Invalid status"));
+  if (!PRIORITIES.includes(priority)) throw new Error(t("Invalid priority"));
 
   const existing = await prisma.order.findFirst({ where: { id: orderId, tenantId: session.tenantId } });
-  if (!existing) throw new Error("Order not found");
+  if (!existing) throw new Error(t("Order not found"));
 
   await prisma.order.updateMany({
     where: { id: orderId, tenantId: session.tenantId },
@@ -75,13 +78,14 @@ export async function updateOrderAction(orderId: string, formData: FormData) {
 
 export async function deleteOrderAction(orderId: string) {
   const session = await requireAuth();
+  const t = await getT();
 
   const existing = await prisma.order.findFirst({ where: { id: orderId, tenantId: session.tenantId } });
-  if (!existing) throw new Error("Order not found");
+  if (!existing) throw new Error(t("Order not found"));
 
   const payCount = await prisma.payment.count({ where: { tenantId: session.tenantId, orderId } });
   if (payCount > 0) {
-    throw new Error("Order has payments and cannot be deleted. Delete its payments first.");
+    throw new Error(t("Order has payments and cannot be deleted. Delete its payments first."));
   }
 
   await prisma.order.deleteMany({ where: { id: orderId, tenantId: session.tenantId } });

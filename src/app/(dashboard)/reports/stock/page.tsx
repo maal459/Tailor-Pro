@@ -6,9 +6,11 @@ import { PrintButton } from "@/components/ui/print-button";
 import { requirePermission } from "@/lib/auth/guards";
 import { financeService } from "@/lib/services/finance-service";
 import { formatCurrency } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export default async function StockReportPage() {
   const session = await requirePermission("reports.view");
+  const t = await getT();
 
   const products = await financeService.stockSummary(session.tenantId);
 
@@ -28,21 +30,21 @@ export default async function StockReportPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Stock Report</h1>
-          <p className="text-sm text-[var(--muted)]">Current inventory snapshot</p>
+          <h1 className="text-2xl font-semibold">{t("Stock Report")}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Current inventory snapshot")}</p>
         </div>
         <div className="flex flex-wrap gap-2 print:hidden">
           <Link
             href="/reports"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            ← Reports
+            ← {t("Reports")}
           </Link>
           <Link
             href="/products"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            Manage Products
+            {t("Manage Products")}
           </Link>
           <PrintButton label="PDF" />
         </div>
@@ -50,36 +52,36 @@ export default async function StockReportPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
-          <p className="text-sm text-[var(--muted)]">Products</p>
+          <p className="text-sm text-[var(--muted)]">{t("Products")}</p>
           <p className="mt-2 text-2xl font-semibold">{products.length}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Units in Stock</p>
+          <p className="text-sm text-[var(--muted)]">{t("Units in Stock")}</p>
           <p className="mt-2 text-2xl font-semibold">{totalUnits}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Stock Value (Cost)</p>
+          <p className="text-sm text-[var(--muted)]">{t("Stock Value (Cost)")}</p>
           <p className="mt-2 text-2xl font-semibold">{formatCurrency(stockCostValue)}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Low Stock</p>
+          <p className="text-sm text-[var(--muted)]">{t("Low Stock")}</p>
           <p className="mt-2 text-2xl font-semibold text-amber-600">{lowStock.length}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Out of Stock</p>
+          <p className="text-sm text-[var(--muted)]">{t("Out of Stock")}</p>
           <p className="mt-2 text-2xl font-semibold text-red-600">{outOfStock.length}</p>
         </Card>
       </div>
 
       <Card>
         <p className="text-sm text-[var(--muted)]">
-          Potential retail value of current stock:{" "}
+          {t("Potential retail value of current stock:")}{" "}
           <strong className="text-[var(--text)]">{formatCurrency(stockRetailValue)}</strong>
         </p>
       </Card>
 
       <Card>
-        <h2 className="mb-4 text-lg font-semibold">Inventory</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t("Inventory")}</h2>
         <DataTable
           headers={["Product", "SKU", "Category", "Supplier", "Qty", "Min", "Cost Value", "Status"]}
           emptyMessage="No products yet."

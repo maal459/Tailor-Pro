@@ -7,6 +7,7 @@ import { requirePermission } from "@/lib/auth/guards";
 import { financeService } from "@/lib/services/finance-service";
 import { getReportRange, parseReportPeriod } from "@/lib/report-range";
 import { formatCurrency, cn } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export default async function ProfitLossReportPage({
   searchParams
@@ -14,6 +15,7 @@ export default async function ProfitLossReportPage({
   searchParams: Promise<{ period?: string; from?: string; to?: string }>;
 }) {
   const session = await requirePermission("reports.view");
+  const t = await getT();
   const params = await searchParams;
   const period = parseReportPeriod(params.period);
   const { from, to } = getReportRange(period, params.from, params.to);
@@ -31,9 +33,9 @@ export default async function ProfitLossReportPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Profit / Loss Report</h1>
+          <h1 className="text-2xl font-semibold">{t("Profit / Loss Report")}</h1>
           <p className="text-sm text-[var(--muted)]">
-            Income vs. expenses, salaries, and purchases
+            {t("Income vs. expenses, salaries, and purchases")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 print:hidden">
@@ -41,7 +43,7 @@ export default async function ProfitLossReportPage({
             href="/reports"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            ← Reports
+            ← {t("Reports")}
           </Link>
           <PrintButton label="PDF" />
         </div>
@@ -56,31 +58,31 @@ export default async function ProfitLossReportPage({
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
-          <p className="text-sm text-[var(--muted)]">Income</p>
+          <p className="text-sm text-[var(--muted)]">{t("Income")}</p>
           <p className="mt-2 text-2xl font-semibold text-emerald-600">
             {formatCurrency(summary.totalIncome)}
           </p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Expenses</p>
+          <p className="text-sm text-[var(--muted)]">{t("Expenses")}</p>
           <p className="mt-2 text-2xl font-semibold text-red-600">
             {formatCurrency(summary.totalExpenses)}
           </p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Salaries</p>
+          <p className="text-sm text-[var(--muted)]">{t("Salaries")}</p>
           <p className="mt-2 text-2xl font-semibold text-red-600">
             {formatCurrency(summary.totalSalaries)}
           </p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Purchases</p>
+          <p className="text-sm text-[var(--muted)]">{t("Purchases")}</p>
           <p className="mt-2 text-2xl font-semibold text-red-600">
             {formatCurrency(summary.totalPurchases)}
           </p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Available Cash</p>
+          <p className="text-sm text-[var(--muted)]">{t("Available Cash")}</p>
           <p
             className={cn(
               "mt-2 text-2xl font-semibold",
@@ -89,10 +91,10 @@ export default async function ProfitLossReportPage({
           >
             {formatCurrency(summary.availableCash)}
           </p>
-          <p className="mt-1 text-xs text-[var(--muted)]">Income − Expenses − Salaries</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">{t("Income − Expenses − Salaries")}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Net Profit</p>
+          <p className="text-sm text-[var(--muted)]">{t("Net Profit")}</p>
           <p
             className={cn(
               "mt-2 text-2xl font-semibold",
@@ -102,14 +104,14 @@ export default async function ProfitLossReportPage({
             {formatCurrency(summary.netProfit)}
           </p>
           <p className="mt-1 text-xs text-[var(--muted)]">
-            Income − Expenses − Salaries − Purchases
+            {t("Income − Expenses − Salaries − Purchases")}
           </p>
         </Card>
       </div>
 
       {/* Statement breakdown */}
       <Card>
-        <h2 className="mb-4 text-lg font-semibold">Statement</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t("Statement")}</h2>
         <div className="space-y-2">
           {rows.map((row) => (
             <div
@@ -118,7 +120,7 @@ export default async function ProfitLossReportPage({
             >
               <span className="text-sm">
                 <span className="mr-2 font-mono">{row.sign}</span>
-                {row.label}
+                {t(row.label)}
               </span>
               <strong
                 className={cn("text-sm", row.sign === "+" ? "text-emerald-600" : "text-red-600")}
@@ -128,7 +130,7 @@ export default async function ProfitLossReportPage({
             </div>
           ))}
           <div className="flex items-center justify-between rounded-xl border-2 border-[var(--primary)] px-3 py-2">
-            <span className="text-sm font-semibold">Net Profit</span>
+            <span className="text-sm font-semibold">{t("Net Profit")}</span>
             <strong
               className={cn(
                 "text-sm",
@@ -146,19 +148,19 @@ export default async function ProfitLossReportPage({
           href="/reports/expenses"
           className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
         >
-          Expense Report →
+          {t("Expense Report")} →
         </Link>
         <Link
           href="/reports/salaries"
           className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
         >
-          Salary Report →
+          {t("Salary Report")} →
         </Link>
         <Link
           href="/reports/purchases"
           className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
         >
-          Purchase Report →
+          {t("Purchase Report")} →
         </Link>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { RevenueChart, StatusPieChart } from "@/components/dashboard-charts";
 import { dashboardService } from "@/lib/services/dashboard-service";
 import { requireAuth } from "@/lib/auth/guards";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
@@ -17,6 +18,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 export default async function DashboardPage() {
   const session = await requireAuth();
   const data = await dashboardService.summary(session.tenantId);
+  const t = await getT();
 
   const revenueSeries = data.recentOrders.map((order) => ({
     name: order.orderNumber,
@@ -28,35 +30,35 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-[var(--muted)]">Operational and financial overview</p>
+        <h1 className="text-2xl font-semibold">{t("Dashboard")}</h1>
+        <p className="text-sm text-[var(--muted)]">{t("Operational and financial overview")}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Today's Orders" value={String(data.todayOrders)} />
-        <MetricCard label="Orders in Progress" value={String(data.inProgress)} />
-        <MetricCard label="Ready for Pickup" value={String(data.ready)} />
-        <MetricCard label="Delivered" value={String(data.delivered)} />
-        <MetricCard label="Total Customers" value={String(data.totalCustomers)} />
-        <MetricCard label="Monthly Revenue" value={formatCurrency(data.monthlyRevenue)} />
-        <MetricCard label="Outstanding Balance" value={formatCurrency(data.outstandingBalances)} />
-        <MetricCard label="Recent Payments" value={String(data.recentPayments.length)} />
+        <MetricCard label={t("Today's Orders")} value={String(data.todayOrders)} />
+        <MetricCard label={t("Orders in Progress")} value={String(data.inProgress)} />
+        <MetricCard label={t("Ready for Pickup")} value={String(data.ready)} />
+        <MetricCard label={t("Delivered")} value={String(data.delivered)} />
+        <MetricCard label={t("Total Customers")} value={String(data.totalCustomers)} />
+        <MetricCard label={t("Monthly Revenue")} value={formatCurrency(data.monthlyRevenue)} />
+        <MetricCard label={t("Outstanding Balance")} value={formatCurrency(data.outstandingBalances)} />
+        <MetricCard label={t("Recent Payments")} value={String(data.recentPayments.length)} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-4 text-lg font-semibold">Sales Chart</h2>
+          <h2 className="mb-4 text-lg font-semibold">{t("Sales Chart")}</h2>
           <RevenueChart data={revenueSeries} />
         </Card>
         <Card>
-          <h2 className="mb-4 text-lg font-semibold">Order Status Summary</h2>
+          <h2 className="mb-4 text-lg font-semibold">{t("Order Status Summary")}</h2>
           <StatusPieChart data={data.statusSummary} />
         </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-3 text-lg font-semibold">Recent Orders</h2>
+          <h2 className="mb-3 text-lg font-semibold">{t("Recent Orders")}</h2>
           <div className="space-y-3">
             {data.recentOrders.map((order) => (
               <div key={order.id} className="flex items-center justify-between rounded-xl border p-3">
@@ -71,7 +73,7 @@ export default async function DashboardPage() {
         </Card>
 
         <Card>
-          <h2 className="mb-3 text-lg font-semibold">Recent Payments</h2>
+          <h2 className="mb-3 text-lg font-semibold">{t("Recent Payments")}</h2>
           <div className="space-y-3">
             {data.recentPayments.map((payment) => (
               <div key={payment.id} className="flex items-center justify-between rounded-xl border p-3">

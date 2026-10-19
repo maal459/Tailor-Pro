@@ -3,10 +3,12 @@ import { Topbar } from "@/components/layout/topbar";
 import { LogoutButton } from "@/components/layout/logout-button";
 import { requireAuth, currentUserIsSuperAdmin } from "@/lib/auth/guards";
 import { getBusinessSettings } from "@/lib/settings";
+import { getT } from "@/lib/i18n/server";
 import { isTenantActive } from "@/lib/tenant";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAuth();
+  const t = await getT();
 
   // Central lockout: a suspended/cancelled tenant can hold a valid session for up to
   // the JWT lifetime, so re-check status on every dashboard load. Rendering a notice
@@ -15,17 +17,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
         <div className="max-w-md space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-center shadow-sm">
-          <h1 className="text-xl font-semibold">Account unavailable</h1>
+          <h1 className="text-xl font-semibold">{t("Account unavailable")}</h1>
           <p className="text-sm text-[var(--muted)]">
-            This business account is currently suspended for an unpaid subscription. Settle your
-            outstanding invoice to restore access instantly.
+            {t(
+              "This business account is currently suspended for an unpaid subscription. Settle your outstanding invoice to restore access instantly."
+            )}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <a
               href="/billing"
               className="inline-flex items-center justify-center rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
-              Pay subscription
+              {t("Pay subscription")}
             </a>
             <LogoutButton />
           </div>

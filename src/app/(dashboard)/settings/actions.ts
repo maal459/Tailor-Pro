@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth/guards";
 import { getBusinessSettings, saveBusinessSettings } from "@/lib/settings";
+import { getT } from "@/lib/i18n/server";
 
 function readText(formData: FormData, key: string, fallback: string) {
   const value = formData.get(key);
@@ -32,8 +33,9 @@ async function fileToLogoDataUrl(value: FormDataEntryValue | null) {
   if (!(value instanceof File) || value.size === 0) {
     return null;
   }
+  const t = await getT();
   if (!value.type.startsWith("image/")) {
-    throw new Error("Logo must be an image file (PNG, JPG, or WebP).");
+    throw new Error(t("Logo must be an image file (PNG, JPG, or WebP)."));
   }
 
   const input = Buffer.from(await value.arrayBuffer());
@@ -45,12 +47,12 @@ async function fileToLogoDataUrl(value: FormDataEntryValue | null) {
       .webp({ quality: 82 })
       .toBuffer();
   } catch {
-    throw new Error("That image could not be read. Please try a different logo file.");
+    throw new Error(t("That image could not be read. Please try a different logo file."));
   }
 
   const dataUrl = `data:image/webp;base64,${output.toString("base64")}`;
   if (dataUrl.length > 60000) {
-    throw new Error("This logo is too detailed to store — please use a simpler or smaller image.");
+    throw new Error(t("This logo is too detailed to store — please use a simpler or smaller image."));
   }
   return dataUrl;
 }
@@ -63,7 +65,7 @@ export async function saveSettingsAction(formData: FormData) {
   try {
     uploadedLogo = await fileToLogoDataUrl(formData.get("logo"));
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not process the logo image.";
+    const message = error instanceof Error ? error.message : (await getT())("Could not process the logo image.");
     redirect(`/settings?error=${encodeURIComponent(message)}`);
   }
 
