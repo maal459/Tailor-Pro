@@ -5,9 +5,11 @@ import { ActionButton } from "@/components/ui/action-button";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { deleteMeasurementProfileAction } from "@/app/(dashboard)/measurements/actions";
+import { getT } from "@/lib/i18n/server";
 
 export default async function MeasurementsPage() {
   const session = await requireAuth();
+  const t = await getT();
 
   const [garmentTypes, profiles] = await Promise.all([
     prisma.garmentType.findMany({ where: { tenantId: session.tenantId, isActive: true }, orderBy: { name: "asc" } }),
@@ -23,9 +25,9 @@ export default async function MeasurementsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Measurements</h1>
+        <h1 className="text-2xl font-semibold">{t("Measurements")}</h1>
         <p className="text-sm text-[var(--muted)]">
-          Store and reuse profile-based measurements per garment · showing the 20 most recent
+          {t("Store and reuse profile-based measurements per garment · showing the 20 most recent")}
         </p>
       </div>
 
@@ -51,13 +53,13 @@ export default async function MeasurementsPage() {
                   href={`/measurements/${profile.id}/edit`}
                   className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
                 >
-                  Edit
+                  {t("Edit")}
                 </Link>
                 <ActionButton
-                  label="Delete"
-                  confirmText={`Delete measurement profile "${profile.name}"?`}
+                  label={t("Delete")}
+                  confirmText={t("Delete measurement profile \"{name}\"?", { name: profile.name })}
                   action={deleteMeasurementProfileAction.bind(null, profile.id)}
-                  successMessage="Profile deleted"
+                  successMessage={t("Profile deleted")}
                   className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
                 />
               </div>

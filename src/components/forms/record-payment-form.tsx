@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toaster";
 import { recordPaymentAction } from "@/app/platform/finance/actions";
+import { useT } from "@/lib/i18n/client";
 
 const METHODS = ["CASH", "ZAAD", "EDAHAB", "BANK_TRANSFER", "CARD", "MANUAL", "OTHER"] as const;
 
@@ -37,6 +38,7 @@ export function RecordPaymentForm({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [values, setValues] = useState({
@@ -57,11 +59,11 @@ export function RecordPaymentForm({
           gatewayRef: values.gatewayRef,
           notes: values.notes
         });
-        toast.push("Payment recorded");
+        toast.push(t("Payment recorded"));
         setOpen(false);
         router.refresh();
       } catch (error) {
-        toast.push(error instanceof Error ? error.message : "Failed to record payment", "error");
+        toast.push(error instanceof Error ? error.message : t("Failed to record payment"), "error");
       }
     });
   };
@@ -75,16 +77,16 @@ export function RecordPaymentForm({
         onClick={() => setOpen(true)}
         className="rounded-lg bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-600 hover:bg-emerald-500/20"
       >
-        Record payment
+        {t("Record payment")}
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl">
-            <h2 className="text-lg font-semibold">Record subscription payment</h2>
+            <h2 className="text-lg font-semibold">{t("Record subscription payment")}</h2>
             <p className="mb-4 text-sm text-[var(--muted)]">{businessName}</p>
             <form onSubmit={submit} className="grid gap-3">
-              <Field label={`Amount (${currency})`}>
+              <Field label={t("Amount ({currency})", { currency })}>
                 <Input
                   type="number"
                   step="0.01"
@@ -94,27 +96,27 @@ export function RecordPaymentForm({
                   required
                 />
               </Field>
-              <Field label="Method">
+              <Field label={t("Method")}>
                 <Select
                   value={values.method}
                   onChange={(e) => setValues((p) => ({ ...p, method: e.target.value }))}
                 >
                   {METHODS.map((m) => (
                     <option key={m} value={m}>
-                      {m.replace("_", " ")}
+                      {t(m).replace("_", " ")}
                     </option>
                   ))}
                 </Select>
               </Field>
-              <Field label={needsRef ? "Transaction reference *" : "Transaction reference (optional)"}>
+              <Field label={needsRef ? t("Transaction reference *") : t("Transaction reference (optional)")}>
                 <Input
                   value={values.gatewayRef}
                   onChange={(e) => setValues((p) => ({ ...p, gatewayRef: e.target.value }))}
-                  placeholder={needsRef ? "e.g. ZAAD txn id" : ""}
+                  placeholder={needsRef ? t("e.g. ZAAD txn id") : ""}
                   required={needsRef}
                 />
               </Field>
-              <Field label="Notes (optional)">
+              <Field label={t("Notes (optional)")}>
                 <Input
                   value={values.notes}
                   onChange={(e) => setValues((p) => ({ ...p, notes: e.target.value }))}
@@ -122,10 +124,10 @@ export function RecordPaymentForm({
               </Field>
               <div className="mt-2 flex gap-2">
                 <Button type="submit" disabled={isPending}>
-                  {isPending ? "Saving…" : "Confirm payment"}
+                  {isPending ? t("Saving…") : t("Confirm payment")}
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-                  Cancel
+                  {t("Cancel")}
                 </Button>
               </div>
             </form>

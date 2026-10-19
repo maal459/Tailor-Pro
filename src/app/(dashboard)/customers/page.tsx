@@ -8,6 +8,7 @@ import { ActionButton } from "@/components/ui/action-button";
 import { customerRepository } from "@/lib/repositories/customer-repository";
 import { requireAuth } from "@/lib/auth/guards";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export default async function CustomersPage({
   searchParams
@@ -15,6 +16,7 @@ export default async function CustomersPage({
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const session = await requireAuth();
+  const t = await getT();
   const params = await searchParams;
   const page = Number(params.page ?? "1");
   const query = params.q;
@@ -26,39 +28,39 @@ export default async function CustomersPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">Customers</h1>
-          <p className="text-sm text-[var(--muted)]">Manage customer records and profiles</p>
+          <h1 className="text-2xl font-semibold">{t("Customers")}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Manage customer records and profiles")}</p>
         </div>
         <div className="flex gap-2">
           <a
             href="/orders/history"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm"
           >
-            Order History
+            {t("Order History")}
           </a>
           <a
             href="/api/exports/customers.csv"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm"
           >
-            Export CSV
+            {t("Export CSV")}
           </a>
         </div>
       </div>
 
       <Card>
         <form className="grid gap-3 md:grid-cols-3" action={createCustomerAction}>
-          <Input name="fullName" placeholder="Full name" required />
-          <Input name="phone" placeholder="Phone" required />
-          <Input name="address" placeholder="Address" defaultValue="Borama, Somaliland" />
-          <Button type="submit" className="md:col-span-3 md:w-fit">Add Customer</Button>
+          <Input name="fullName" placeholder={t("Full name")} required />
+          <Input name="phone" placeholder={t("Phone")} required />
+          <Input name="address" placeholder={t("Address")} defaultValue="Borama, Somaliland" />
+          <Button type="submit" className="md:col-span-3 md:w-fit">{t("Add Customer")}</Button>
         </form>
       </Card>
 
       <Card>
         <form className="mb-4 flex gap-2" method="get">
-          <Input name="q" placeholder="Search name, phone, customer number" defaultValue={query} />
+          <Input name="q" placeholder={t("Search name, phone, customer number")} defaultValue={query} />
           <Button variant="secondary" type="submit">
-            Search
+            {t("Search")}
           </Button>
         </form>
 
@@ -103,19 +105,19 @@ export default async function CustomersPage({
                       href={`/customers/${customer.id}`}
                       className="rounded-lg bg-[var(--primary)]/10 px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/20"
                     >
-                      View
+                      {t("View")}
                     </Link>
                     <Link
                       href={`/customers/${customer.id}/edit`}
                       className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
                     >
-                      Edit
+                      {t("Edit")}
                     </Link>
                     <ActionButton
-                      label="Delete"
-                      confirmText={`Delete customer "${customer.fullName}"? This cannot be undone.`}
+                      label={t("Delete")}
+                      confirmText={t("Delete customer \"{name}\"? This cannot be undone.", { name: customer.fullName })}
                       action={deleteCustomerAction.bind(null, customer.id)}
-                      successMessage="Customer deleted"
+                      successMessage={t("Customer deleted")}
                       className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
                     />
                   </div>
@@ -127,20 +129,20 @@ export default async function CustomersPage({
 
         <div className="mt-4 flex items-center justify-between text-sm">
           <p>
-            Page {page} of {pageCount}
+            {t("Page {page} of {pages}", { page, pages: pageCount })}
           </p>
           <div className="flex gap-2">
             <a
               className="rounded-lg border px-3 py-1"
               href={`/customers?page=${Math.max(1, page - 1)}${query ? `&q=${encodeURIComponent(query)}` : ""}`}
             >
-              Prev
+              {t("Previous")}
             </a>
             <a
               className="rounded-lg border px-3 py-1"
               href={`/customers?page=${Math.min(pageCount, page + 1)}${query ? `&q=${encodeURIComponent(query)}` : ""}`}
             >
-              Next
+              {t("Next")}
             </a>
           </div>
         </div>

@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 import type { ReportPeriod } from "@/lib/report-range";
 
 const TABS: { id: ReportPeriod; label: string }[] = [
   { id: "today", label: "Today" },
-  { id: "week", label: "This Week" },
+  { id: "week", label: "This week" },
   { id: "month", label: "This Month" },
-  { id: "year", label: "This Year" },
+  { id: "year", label: "This year" },
   { id: "all", label: "All Time" },
   { id: "custom", label: "Custom" }
 ];
 
-export function ReportFilterBar({
+export async function ReportFilterBar({
   basePath,
   period,
   from,
@@ -23,6 +24,7 @@ export function ReportFilterBar({
   from: Date;
   to: Date;
 }) {
+  const t = await getT();
   return (
     <>
       <div className="flex gap-1 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-1 print:hidden">
@@ -37,7 +39,7 @@ export function ReportFilterBar({
                 : "text-[var(--muted)] hover:text-[var(--text)]"
             )}
           >
-            {tab.label}
+            {t(tab.label)}
           </Link>
         ))}
       </div>
@@ -58,7 +60,7 @@ export function ReportFilterBar({
               defaultValue={to.toISOString().slice(0, 10)}
               className="h-10 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm focus:outline-none"
             />
-            <button className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm text-white">Apply</button>
+            <button className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm text-white">{t("Apply")}</button>
           </form>
         </Card>
       )}

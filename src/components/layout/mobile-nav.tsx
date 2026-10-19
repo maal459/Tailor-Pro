@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BusinessSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n/client";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
 
 /**
@@ -22,13 +23,14 @@ export function MobileNav({
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const t = useT();
   const close = () => setOpen(false);
 
   return (
     <div className="lg:hidden">
       <button
         type="button"
-        aria-label="Open menu"
+        aria-label={t("Open menu")}
         onClick={() => setOpen(true)}
         className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text)] hover:bg-black/5"
       >
@@ -57,7 +59,7 @@ export function MobileNav({
               </div>
               <button
                 type="button"
-                aria-label="Close menu"
+                aria-label={t("Close menu")}
                 onClick={close}
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10"
               >
@@ -84,7 +86,7 @@ export function MobileNav({
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
-                    {item.label}
+                    {t(item.label)}
                   </Link>
                 );
               })}
@@ -102,7 +104,7 @@ export function MobileNav({
                     )}
                   >
                     <ShieldCheck className="h-4 w-4 shrink-0" />
-                    Platform Admin
+                    {t("Platform Admin")}
                   </Link>
                 </div>
               )}

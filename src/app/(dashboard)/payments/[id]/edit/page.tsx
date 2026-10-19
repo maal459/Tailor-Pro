@@ -4,6 +4,7 @@ import { EditPaymentForm } from "@/components/forms/edit-payment-form";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export default async function EditPaymentPage({
   params
@@ -11,6 +12,7 @@ export default async function EditPaymentPage({
   params: Promise<{ id: string }>;
 }) {
   const session   = await requireAuth();
+  const t         = await getT();
   const { id }    = await params;
 
   const [payment, methods] = await Promise.all([
@@ -28,7 +30,7 @@ export default async function EditPaymentPage({
   return (
     <div className="mx-auto max-w-lg space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Edit Payment</h1>
+        <h1 className="text-2xl font-semibold">{t("Edit Payment")}</h1>
         <p className="text-sm text-[var(--muted)]">
           {payment.customer.fullName} · {payment.paymentDate.toLocaleDateString()}
         </p>

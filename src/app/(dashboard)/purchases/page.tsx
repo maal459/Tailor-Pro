@@ -10,6 +10,7 @@ import { purchaseRepository } from "@/lib/repositories/purchase-repository";
 import { supplierRepository } from "@/lib/repositories/supplier-repository";
 import { productRepository } from "@/lib/repositories/product-repository";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 import { deletePurchaseAction } from "@/app/(dashboard)/purchases/actions";
 
 const PAGE_SIZE = 10;
@@ -20,6 +21,7 @@ export default async function PurchasesPage({
   searchParams: Promise<{ q?: string; from?: string; to?: string; page?: string }>;
 }) {
   const session = await requirePermission("purchases.manage");
+  const t = await getT();
   const params = await searchParams;
   const q = params.q?.trim();
   const from = params.from?.trim();
@@ -56,9 +58,9 @@ export default async function PurchasesPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">Purchases</h1>
+          <h1 className="text-2xl font-semibold">{t("Purchases")}</h1>
           <p className="text-sm text-[var(--muted)]">
-            Record supplier purchases — stock levels update automatically
+            {t("Record supplier purchases — stock levels update automatically")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -66,20 +68,20 @@ export default async function PurchasesPage({
             href="/suppliers"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            Suppliers
+            {t("Suppliers")}
           </Link>
           <Link
             href="/reports/purchases"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            Purchase Report
+            {t("Purchase Report")}
           </Link>
         </div>
       </div>
 
       {/* New purchase */}
       <Card>
-        <p className="mb-4 text-sm font-semibold">New Purchase</p>
+        <p className="mb-4 text-sm font-semibold">{t("New Purchase")}</p>
         {suppliers.length && products.length ? (
           <PurchaseForm
             suppliers={suppliers.map((supplier) => ({
@@ -94,15 +96,15 @@ export default async function PurchasesPage({
           />
         ) : (
           <p className="text-sm text-[var(--muted)]">
-            You need at least one{" "}
+            {t("You need at least one")}{" "}
             <Link href="/suppliers" className="text-[var(--primary)] underline">
-              supplier
+              {t("supplier")}
             </Link>{" "}
-            and one{" "}
+            {t("and one")}{" "}
             <Link href="/products" className="text-[var(--primary)] underline">
-              product
+              {t("product")}
             </Link>{" "}
-            before recording purchases.
+            {t("before recording purchases.")}
           </p>
         )}
       </Card>
@@ -110,19 +112,19 @@ export default async function PurchasesPage({
       {/* Search, filters, and list */}
       <Card>
         <form className="mb-4 grid gap-3 md:grid-cols-4" method="get">
-          <Input name="q" placeholder="Search invoice or supplier" defaultValue={q} />
+          <Input name="q" placeholder={t("Search invoice or supplier")} defaultValue={q} />
           <Input name="from" type="date" defaultValue={from} />
           <Input name="to" type="date" defaultValue={to} />
           <div className="flex gap-2">
             <Button variant="secondary" type="submit">
-              Filter
+              {t("Filter")}
             </Button>
             {(q || from || to) && (
               <Link
                 href="/purchases"
                 className="inline-flex items-center rounded-xl border border-[var(--border)] px-4 py-2 text-sm"
               >
-                Clear
+                {t("Clear")}
               </Link>
             )}
           </div>
@@ -141,9 +143,14 @@ export default async function PurchasesPage({
                   <td className="px-4 py-3 font-mono text-xs">{purchase.invoiceNo ?? "—"}</td>
                   <td className="px-4 py-3 font-medium">{purchase.supplier.supplierName}</td>
                   <td className="px-4 py-3">
-                    {purchase.items.reduce((sum, item) => sum + item.quantity, 0)} unit
-                    {purchase.items.reduce((sum, item) => sum + item.quantity, 0) !== 1 ? "s" : ""} ·{" "}
-                    {purchase.items.length} product{purchase.items.length !== 1 ? "s" : ""}
+                    {(() => {
+                      const units = purchase.items.reduce((sum, item) => sum + item.quantity, 0);
+                      return t(units === 1 ? "{count} unit" : "{count} units", { count: units });
+                    })()}{" "}
+                    ·{" "}
+                    {t(purchase.items.length === 1 ? "{count} product" : "{count} products", {
+                      count: purchase.items.length
+                    })}
                   </td>
                   <td className="px-4 py-3 font-semibold">{formatCurrency(toNumber(purchase.total))}</td>
                   <td className="px-4 py-3">
@@ -152,13 +159,13 @@ export default async function PurchasesPage({
                         href={`/purchases/${purchase.id}`}
                         className="rounded-lg bg-[var(--primary)]/10 px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/20"
                       >
-                        View
+                        {t("View")}
                       </Link>
                       <ActionButton
-                        label="Delete"
-                        confirmText="Delete this purchase? Stock added by it will be removed again."
+                        label={t("Delete")}
+                        confirmText={t("Delete this purchase? Stock added by it will be removed again.")}
                         action={deletePurchaseAction.bind(null, purchase.id)}
-                        successMessage="Purchase deleted and stock reversed"
+                        successMessage={t("Purchase deleted and stock reversed")}
                         className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
                       />
                     </div>
@@ -170,14 +177,15 @@ export default async function PurchasesPage({
 
         <div className="mt-4 flex items-center justify-between text-sm">
           <p>
-            Page {page} of {pageCount} · {total} purchase{total !== 1 ? "s" : ""}
+            {t("Page {page} of {pages}", { page, pages: pageCount })} ·{" "}
+            {t(total === 1 ? "{count} purchase" : "{count} purchases", { count: total })}
           </p>
           <div className="flex gap-2">
             <a className="rounded-lg border px-3 py-1" href={pageHref(Math.max(1, page - 1))}>
-              Prev
+              {t("Prev")}
             </a>
             <a className="rounded-lg border px-3 py-1" href={pageHref(Math.min(pageCount, page + 1))}>
-              Next
+              {t("Next")}
             </a>
           </div>
         </div>

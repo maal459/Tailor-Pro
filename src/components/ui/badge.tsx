@@ -1,3 +1,6 @@
+"use client";
+
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 const STATUS_CLASSES: Record<string, string> = {
@@ -24,6 +27,7 @@ export function Badge({
   label: string;
   tone?: "neutral" | "success" | "warn" | "danger";
 }) {
+  const t = useT();
   const statusClass = STATUS_CLASSES[label];
 
   return (
@@ -38,7 +42,7 @@ export function Badge({
         )
       )}
     >
-      {label}
+      {t(label)}
     </span>
   );
 }

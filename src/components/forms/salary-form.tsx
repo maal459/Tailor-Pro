@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toaster";
+import { useT } from "@/lib/i18n/client";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -26,6 +27,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export function SalaryForm({ employees }: { employees: EmployeeOption[] }) {
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
+  const t = useT();
 
   const now = new Date();
   const [employeeId, setEmployeeId] = useState("");
@@ -44,28 +46,28 @@ export function SalaryForm({ employees }: { employees: EmployeeOption[] }) {
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!employeeId) {
-      toast.push("Please select an employee", "error");
+      toast.push(t("Please select an employee"), "error");
       return;
     }
 
     startTransition(async () => {
       try {
         await createSalaryAction({ employeeId, amount, paymentDate, month, year, notes });
-        toast.push("Salary payment recorded");
+        toast.push(t("Salary payment recorded"));
         setEmployeeId("");
         setAmount(0);
         setNotes("");
       } catch (error) {
-        toast.push(error instanceof Error ? error.message : "Failed to record salary", "error");
+        toast.push(error instanceof Error ? error.message : t("Failed to record salary"), "error");
       }
     });
   };
 
   return (
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <Field label="Employee *">
+      <Field label={t("Employee *")}>
         <Select value={employeeId} onChange={(e) => selectEmployee(e.target.value)} required>
-          <option value="">Select employee…</option>
+          <option value="">{t("Select employee…")}</option>
           {employees.map((employee) => (
             <option key={employee.id} value={employee.id}>
               {employee.label}
@@ -74,7 +76,7 @@ export function SalaryForm({ employees }: { employees: EmployeeOption[] }) {
         </Select>
       </Field>
 
-      <Field label="Amount ($) *">
+      <Field label={t("Amount ($) *")}>
         <Input
           type="number"
           min={0.01}
@@ -85,7 +87,7 @@ export function SalaryForm({ employees }: { employees: EmployeeOption[] }) {
         />
       </Field>
 
-      <Field label="Payment Date *">
+      <Field label={t("Payment Date *")}>
         <Input
           type="date"
           value={paymentDate}
@@ -94,17 +96,17 @@ export function SalaryForm({ employees }: { employees: EmployeeOption[] }) {
         />
       </Field>
 
-      <Field label="Salary Month *">
+      <Field label={t("Salary Month *")}>
         <Select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
           {MONTHS.map((name, index) => (
             <option key={name} value={index + 1}>
-              {name}
+              {t(name)}
             </option>
           ))}
         </Select>
       </Field>
 
-      <Field label="Salary Year *">
+      <Field label={t("Salary Year *")}>
         <Input
           type="number"
           min={2000}
@@ -115,9 +117,9 @@ export function SalaryForm({ employees }: { employees: EmployeeOption[] }) {
         />
       </Field>
 
-      <Field label="Notes">
+      <Field label={t("Notes")}>
         <Input
-          placeholder="Optional notes…"
+          placeholder={t("Optional notes…")}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
@@ -125,7 +127,7 @@ export function SalaryForm({ employees }: { employees: EmployeeOption[] }) {
 
       <div className="sm:col-span-2 lg:col-span-3">
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Recording…" : "Record Salary Payment"}
+          {isPending ? t("Recording…") : t("Record Salary Payment")}
         </Button>
       </div>
     </form>

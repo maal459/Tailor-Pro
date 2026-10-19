@@ -9,6 +9,7 @@ import { employeeRepository } from "@/lib/repositories/employee-repository";
 import { salaryRepository } from "@/lib/repositories/salary-repository";
 import { prisma } from "@/lib/db/prisma";
 import { logActivity } from "@/lib/activity-log";
+import { getT } from "@/lib/i18n/server";
 
 function revalidateSalaryViews() {
   revalidatePath("/employees");
@@ -29,7 +30,7 @@ export async function createEmployeeAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid employee data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid employee data"));
   }
 
   const employee = await employeeRepository.create({
@@ -65,12 +66,12 @@ export async function updateEmployeeAction(employeeId: string, formData: FormDat
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid employee data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid employee data"));
   }
 
   const existing = await employeeRepository.byId(session.tenantId, employeeId);
   if (!existing) {
-    throw new Error("Employee not found");
+    throw new Error((await getT())("Employee not found"));
   }
 
   await employeeRepository.update(session.tenantId, employeeId, {
@@ -99,14 +100,14 @@ export async function deleteEmployeeAction(employeeId: string) {
 
   const existing = await employeeRepository.byId(session.tenantId, employeeId);
   if (!existing) {
-    throw new Error("Employee not found");
+    throw new Error((await getT())("Employee not found"));
   }
 
   const salaryCount = await prisma.salary.count({
     where: { tenantId: session.tenantId, employeeId }
   });
   if (salaryCount > 0) {
-    throw new Error("Employee has salary records. Deactivate the employee instead of deleting.");
+    throw new Error((await getT())("Employee has salary records. Deactivate the employee instead of deleting."));
   }
 
   await employeeRepository.remove(session.tenantId, employeeId);
@@ -128,12 +129,12 @@ export async function createSalaryAction(input: unknown) {
 
   const parsed = createSalarySchema.safeParse(input);
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid salary data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid salary data"));
   }
 
   const employee = await employeeRepository.byId(session.tenantId, parsed.data.employeeId);
   if (!employee) {
-    throw new Error("Employee not found");
+    throw new Error((await getT())("Employee not found"));
   }
 
   const salary = await salaryRepository.create({
@@ -170,12 +171,12 @@ export async function updateSalaryAction(salaryId: string, formData: FormData) {
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid salary data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid salary data"));
   }
 
   const existing = await salaryRepository.byId(session.tenantId, salaryId);
   if (!existing) {
-    throw new Error("Salary payment not found");
+    throw new Error((await getT())("Salary payment not found"));
   }
 
   await salaryRepository.update(session.tenantId, salaryId, {
@@ -204,7 +205,7 @@ export async function deleteSalaryAction(salaryId: string) {
 
   const existing = await salaryRepository.byId(session.tenantId, salaryId);
   if (!existing) {
-    throw new Error("Salary payment not found");
+    throw new Error((await getT())("Salary payment not found"));
   }
 
   await salaryRepository.remove(session.tenantId, salaryId);

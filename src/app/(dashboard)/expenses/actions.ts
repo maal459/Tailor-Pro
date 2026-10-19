@@ -10,6 +10,7 @@ import {
 } from "@/lib/validators/expense";
 import { expenseRepository } from "@/lib/repositories/expense-repository";
 import { logActivity } from "@/lib/activity-log";
+import { getT } from "@/lib/i18n/server";
 
 function revalidateExpenseViews() {
   revalidatePath("/expenses");
@@ -30,7 +31,7 @@ export async function createExpenseAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid expense data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid expense data"));
   }
 
   const expense = await expenseRepository.create({
@@ -69,12 +70,12 @@ export async function updateExpenseAction(expenseId: string, formData: FormData)
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid expense data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid expense data"));
   }
 
   const existing = await expenseRepository.byId(session.tenantId, expenseId);
   if (!existing) {
-    throw new Error("Expense not found");
+    throw new Error((await getT())("Expense not found"));
   }
 
   await expenseRepository.update(session.tenantId, expenseId, {
@@ -104,7 +105,7 @@ export async function deleteExpenseAction(expenseId: string) {
 
   const existing = await expenseRepository.byId(session.tenantId, expenseId);
   if (!existing) {
-    throw new Error("Expense not found");
+    throw new Error((await getT())("Expense not found"));
   }
 
   await expenseRepository.remove(session.tenantId, expenseId);
@@ -130,7 +131,7 @@ export async function createExpenseCategoryAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid category data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid category data"));
   }
 
   const category = await expenseRepository.createCategory({
@@ -157,7 +158,7 @@ export async function deleteExpenseCategoryAction(categoryId: string) {
   const categories = await expenseRepository.listCategories(session.tenantId);
   const existing = categories.find((category) => category.id === categoryId);
   if (!existing) {
-    throw new Error("Category not found");
+    throw new Error((await getT())("Category not found"));
   }
 
   await expenseRepository.removeCategory(session.tenantId, categoryId);

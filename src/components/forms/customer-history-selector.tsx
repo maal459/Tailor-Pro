@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { AsyncCombobox } from "@/components/ui/async-combobox";
+import { useT } from "@/lib/i18n/client";
 
 /**
  * Navigate-on-select customer picker (ledger, order history). Server-backed search, so it
@@ -17,6 +18,7 @@ export function CustomerHistorySelector({
   basePath?: string;
 }) {
   const router = useRouter();
+  const t = useT();
 
   return (
     <AsyncCombobox
@@ -24,7 +26,7 @@ export function CustomerHistorySelector({
       value={selectedId}
       initialLabel={initialLabel}
       onSelect={(r) => { if (r) router.push(`${basePath}?customerId=${r.id}`); }}
-      placeholder="Search by phone or name…"
+      placeholder={t("Search by phone or name…")}
       className="min-w-72 flex-1"
     />
   );

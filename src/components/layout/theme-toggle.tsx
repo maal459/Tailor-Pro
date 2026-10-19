@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -23,7 +25,7 @@ export function ThemeToggle() {
   };
 
   return (
-    <Button variant="secondary" onClick={toggle} aria-label="Toggle theme">
+    <Button variant="secondary" onClick={toggle} aria-label={t("Toggle theme")}>
       {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </Button>
   );

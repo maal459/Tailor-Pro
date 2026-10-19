@@ -1,4 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useT } from "@/lib/i18n/client";
+
+// Headers and the empty message are English UI text, translated here so every table
+// follows the viewer's language without each page translating its column names.
 
 export function DataTable({
   headers,
@@ -9,6 +15,8 @@ export function DataTable({
   children: ReactNode;
   emptyMessage?: string;
 }) {
+  const t = useT();
+
   return (
     <div className="overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--card)]">
       <table className="min-w-full text-sm">
@@ -19,7 +27,7 @@ export function DataTable({
                 key={header}
                 className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--muted)]"
               >
-                {header}
+                {t(header)}
               </th>
             ))}
           </tr>
@@ -31,7 +39,7 @@ export function DataTable({
                 colSpan={headers.length}
                 className="px-4 py-10 text-center text-sm text-[var(--muted)]"
               >
-                {emptyMessage}
+                {t(emptyMessage)}
               </td>
             </tr>
           )}

@@ -7,6 +7,7 @@ import { PrintButton } from "@/components/ui/print-button";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getBusinessSettings } from "@/lib/settings";
+import { getT } from "@/lib/i18n/server";
 
 const RESULT_LIMIT = 40;
 
@@ -16,6 +17,7 @@ export default async function ReceiptsPage({
   searchParams: Promise<{ orderId?: string; q?: string }>;
 }) {
   const session = await requireAuth();
+  const t       = await getT();
   const params  = await searchParams;
   const settings = await getBusinessSettings(session.tenantId);
   const q = params.q?.trim();
@@ -129,32 +131,32 @@ export default async function ReceiptsPage({
       <div className="no-print print:hidden space-y-3" data-no-print="true">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-semibold">Receipts</h1>
-            <p className="text-sm text-[var(--muted)]">Search an order or customer, then print the receipt</p>
+            <h1 className="text-2xl font-semibold">{t("Receipts")}</h1>
+            <p className="text-sm text-[var(--muted)]">{t("Search an order or customer, then print the receipt")}</p>
           </div>
-          <PrintButton label="Print Receipt" />
+          <PrintButton label={t("Print Receipt")} />
         </div>
 
         <form method="get" className="flex gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
           <Input
             name="q"
             defaultValue={q ?? ""}
-            placeholder="Search by customer name, phone, or order number…"
+            placeholder={t("Search by customer name, phone, or order number…")}
             className="flex-1"
           />
-          <Button type="submit">Search</Button>
+          <Button type="submit">{t("Search")}</Button>
         </form>
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2">
           {orders.length === 0 ? (
             <p className="px-3 py-3 text-center text-sm text-[var(--muted)]">
-              No orders match &ldquo;{q}&rdquo;. Try a different name or number.
+              {t("No orders match “{q}”. Try a different name or number.", { q: q ?? "" })}
             </p>
           ) : (
             <>
               <p className="px-3 py-1 text-xs text-[var(--muted)]">
-                {q ? `${orders.length} match${orders.length !== 1 ? "es" : ""}` : "Recent orders"}
-                {orders.length === RESULT_LIMIT ? " · showing first 40, refine to narrow" : ""}
+                {q ? t(orders.length !== 1 ? "{count} matches" : "{count} match", { count: orders.length }) : t("Recent orders")}
+                {orders.length === RESULT_LIMIT ? t(" · showing first 40, refine to narrow") : ""}
               </p>
               <div className="max-h-56 overflow-auto">
                 {orders.map((o) => (
@@ -203,13 +205,13 @@ export default async function ReceiptsPage({
                 {settings.receiptFooter && (
                   <p className="whitespace-pre-line text-xs text-gray-600">{settings.receiptFooter}</p>
                 )}
-                <p className="text-xs text-gray-500">Receipt generated: {new Date().toLocaleDateString()}</p>
+                <p className="text-xs text-gray-500">{t("Receipt generated: {date}", { date: new Date().toLocaleDateString() })}</p>
               </div>
 
               {qr && (
                 <div className="flex shrink-0 justify-start md:justify-end print:justify-end">
                   <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm print:rounded-lg print:p-1">
-                    <img src={qr} alt="Receipt QR Code" className="h-36 w-36 print:h-20 print:w-20" />
+                    <img src={qr} alt={t("Receipt QR Code")} className="h-36 w-36 print:h-20 print:w-20" />
                   </div>
                 </div>
               )}
@@ -217,16 +219,16 @@ export default async function ReceiptsPage({
 
             <div className="mt-4 grid grid-cols-1 gap-4 text-sm md:grid-cols-2 print:grid-cols-2">
               <div>
-                <p className="font-semibold text-gray-500 uppercase text-xs tracking-wider">Customer</p>
+                <p className="font-semibold text-gray-500 uppercase text-xs tracking-wider">{t("Customer")}</p>
                 <p className="mt-1 font-bold text-lg">{order.customer.fullName}</p>
                 <p className="text-gray-700">{order.customer.phone}</p>
               </div>
               <div className="text-right">
-                <p className="font-semibold text-gray-500 uppercase text-xs tracking-wider">Order</p>
+                <p className="font-semibold text-gray-500 uppercase text-xs tracking-wider">{t("Order")}</p>
                 <p className="mt-1 font-bold text-lg font-mono">{order.orderNumber}</p>
                 <p className="text-gray-700">{order.orderDate.toLocaleDateString()}</p>
                 {order.deliveryDate && (
-                  <p className="text-gray-700">Due: {order.deliveryDate.toLocaleDateString()}</p>
+                  <p className="text-gray-700">{t("Due: {date}", { date: order.deliveryDate.toLocaleDateString() })}</p>
                 )}
               </div>
             </div>
@@ -234,14 +236,14 @@ export default async function ReceiptsPage({
 
           {/* Garment items */}
           <div className="mt-6">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">Items</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">{t("Items")}</p>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
-                  <th className="pb-2 font-medium">Garment</th>
-                  <th className="pb-2 text-center font-medium">Qty</th>
-                  <th className="pb-2 text-right font-medium">Unit</th>
-                  <th className="pb-2 text-right font-medium">Total</th>
+                  <th className="pb-2 font-medium">{t("Garment")}</th>
+                  <th className="pb-2 text-center font-medium">{t("Qty")}</th>
+                  <th className="pb-2 text-right font-medium">{t("Unit")}</th>
+                  <th className="pb-2 text-right font-medium">{t("Total")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -266,28 +268,28 @@ export default async function ReceiptsPage({
           {/* Totals */}
           <div className="mt-4 space-y-1.5 border-t border-gray-200 pt-4 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Subtotal</span>
+              <span className="text-gray-500">{t("Subtotal")}</span>
               <span>{renderAmount(subtotal)}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>Discount</span>
+                <span>{t("Discount")}</span>
                 <span>- {renderAmount(discount)}</span>
               </div>
             )}
             <div className="flex justify-between text-base font-bold">
-              <span>Total</span>
+              <span>{t("Total")}</span>
               <span>{renderAmount(total)}</span>
             </div>
             <div className="flex justify-between text-green-700">
-              <span>Paid</span>
+              <span>{t("Paid")}</span>
               <span>{renderAmount(paid)}</span>
             </div>
             <div
               className="flex justify-between text-base font-bold"
               style={{ color: balance > 0 ? settings.brandColor : "#15803d" }}
             >
-              <span>Balance Due</span>
+              <span>{t("Balance Due")}</span>
               <span>{renderAmount(balance)}</span>
             </div>
           </div>
@@ -296,15 +298,15 @@ export default async function ReceiptsPage({
           {order.payments.length > 0 && (
             <div className="mt-6">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Payment History
+                {t("Payment History")}
               </p>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
-                    <th className="pb-2 font-medium">Date</th>
-                    <th className="pb-2 font-medium">Method</th>
-                    <th className="pb-2 font-medium">Reference</th>
-                    <th className="pb-2 text-right font-medium">Amount</th>
+                    <th className="pb-2 font-medium">{t("Date")}</th>
+                    <th className="pb-2 font-medium">{t("Method")}</th>
+                    <th className="pb-2 font-medium">{t("Reference")}</th>
+                    <th className="pb-2 text-right font-medium">{t("Amount")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -325,12 +327,12 @@ export default async function ReceiptsPage({
 
           {/* Footer — business info now sits in the letterhead at the top */}
           <div className="mt-6 border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
-            <p>This receipt was generated on {new Date().toLocaleString()}</p>
+            <p>{t("This receipt was generated on {date}", { date: new Date().toLocaleString() })}</p>
           </div>
         </div>
       ) : (
         <div className="no-print print:hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-12 text-center text-[var(--muted)]">
-          Select an order above to view its receipt.
+          {t("Select an order above to view its receipt.")}
         </div>
       )}
     </div>

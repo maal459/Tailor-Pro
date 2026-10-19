@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useToast } from "@/components/ui/toaster";
+import { useT } from "@/lib/i18n/client";
 
 type Props = {
   label: string;
@@ -18,6 +19,7 @@ type Props = {
 export function ActionButton({ label, action, confirmText, successMessage, className }: Props) {
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
+  const t = useT();
 
   return (
     <button
@@ -25,18 +27,18 @@ export function ActionButton({ label, action, confirmText, successMessage, class
       disabled={isPending}
       className={className}
       onClick={() => {
-        if (confirmText && !window.confirm(confirmText)) return;
+        if (confirmText && !window.confirm(t(confirmText))) return;
         startTransition(async () => {
           try {
             await action();
-            if (successMessage) toast.push(successMessage);
+            if (successMessage) toast.push(t(successMessage));
           } catch (error) {
-            toast.push(error instanceof Error ? error.message : "Operation failed", "error");
+            toast.push(error instanceof Error ? error.message : t("Operation failed"), "error");
           }
         });
       }}
     >
-      {isPending ? "…" : label}
+      {isPending ? "…" : t(label)}
     </button>
   );
 }

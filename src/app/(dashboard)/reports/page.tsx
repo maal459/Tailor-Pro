@@ -11,6 +11,7 @@ import { PrintButton } from "@/components/ui/print-button";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { formatCurrency, toNumber, cn } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 type Period = "daily" | "monthly" | "yearly" | "custom";
 
@@ -63,6 +64,7 @@ export default async function ReportsPage({
   searchParams: Promise<{ period?: string; from?: string; to?: string }>;
 }) {
   const session = await requireAuth();
+  const t       = await getT();
   const params  = await searchParams;
   const period  = (params.period ?? "monthly") as Period;
   const { from, to } = getRange(period, params.from, params.to);
@@ -141,16 +143,16 @@ export default async function ReportsPage({
   const chartData = buildChart(period, revenueByBucket, from, to);
 
   const chartTitle =
-    period === "yearly" ? "Revenue by Month" :
-    period === "daily"  ? "Last 7 Days"      :
-                          "Revenue by Day";
+    period === "yearly" ? t("Revenue by Month") :
+    period === "daily"  ? t("Last 7 Days")      :
+                          t("Revenue by Day");
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Sales Reports</h1>
-          <p className="text-sm text-[var(--muted)]">Revenue, collections, and customer trends</p>
+          <h1 className="text-2xl font-semibold">{t("Sales Reports")}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Revenue, collections, and customer trends")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <a href="/api/exports/orders.csv"  className="rounded-xl border px-3 py-2 text-sm hover:bg-black/5">CSV</a>
@@ -172,7 +174,7 @@ export default async function ReportsPage({
                 : "text-[var(--muted)] hover:text-[var(--text)]"
             )}
           >
-            {tab.label}
+            {t(tab.label)}
           </Link>
         ))}
       </div>
@@ -192,14 +194,14 @@ export default async function ReportsPage({
               defaultValue={to.toISOString().slice(0, 10)}
               className="h-10 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm focus:outline-none"
             />
-            <button className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm text-white">Apply</button>
+            <button className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm text-white">{t("Apply")}</button>
           </form>
         </Card>
       )}
 
       <p className="text-sm text-[var(--muted)]">
         {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")}
-        {" "}· {orderCount} orders
+        {" "}· {t("{count} orders", { count: orderCount })}
       </p>
 
       {/* KPI cards */}
@@ -215,7 +217,7 @@ export default async function ReportsPage({
           { label: "Transactions",        value: String(paymentCount + orderCount) },
         ].map(({ label, value }) => (
           <Card key={label}>
-            <p className="text-sm text-[var(--muted)]">{label}</p>
+            <p className="text-sm text-[var(--muted)]">{t(label)}</p>
             <p className="mt-2 text-2xl font-semibold">{value}</p>
           </Card>
         ))}
@@ -228,7 +230,7 @@ export default async function ReportsPage({
           <RevenueChart data={chartData} />
         </Card>
         <Card>
-          <h2 className="mb-3 text-lg font-semibold">Top Customers</h2>
+          <h2 className="mb-3 text-lg font-semibold">{t("Top Customers")}</h2>
           <div className="space-y-2">
             {topCustomers.map((c) => (
               <div key={c.name} className="flex items-center justify-between rounded-xl border px-3 py-2">
@@ -236,7 +238,7 @@ export default async function ReportsPage({
                 <strong className="text-sm">{formatCurrency(c.total)}</strong>
               </div>
             ))}
-            {!topCustomers.length && <p className="text-sm text-[var(--muted)]">No orders in this period.</p>}
+            {!topCustomers.length && <p className="text-sm text-[var(--muted)]">{t("No orders in this period.")}</p>}
           </div>
         </Card>
       </div>
@@ -244,22 +246,22 @@ export default async function ReportsPage({
       {/* Financial reports */}
       <div className="flex flex-wrap gap-2">
         <a href="/reports/daily" className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">
-          Daily Transactions Report →
+          {t("Daily Transactions Report")} →
         </a>
         <a href="/reports/expenses" className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">
-          Expense Report →
+          {t("Expense Report")} →
         </a>
         <a href="/reports/salaries" className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">
-          Salary Report →
+          {t("Salary Report")} →
         </a>
         <a href="/reports/purchases" className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">
-          Purchase Report →
+          {t("Purchase Report")} →
         </a>
         <a href="/reports/stock" className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">
-          Stock Report →
+          {t("Stock Report")} →
         </a>
         <a href="/reports/profit-loss" className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">
-          Profit / Loss Report →
+          {t("Profit / Loss Report")} →
         </a>
       </div>
     </div>
