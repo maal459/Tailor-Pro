@@ -5,6 +5,7 @@ import { PrintButton } from "@/components/ui/print-button";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export default async function DailyTransactionsPage({
   searchParams
@@ -12,6 +13,7 @@ export default async function DailyTransactionsPage({
   searchParams: Promise<{ date?: string }>;
 }) {
   const session      = await requireAuth();
+  const t            = await getT();
   const params       = await searchParams;
   const selectedDate = params.date ? new Date(params.date) : new Date();
   const dayStart     = startOfDay(selectedDate);
@@ -52,7 +54,7 @@ export default async function DailyTransactionsPage({
       {/* Controls — hidden on print */}
       <div className="no-print print:hidden flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Daily Sales Report</h1>
+          <h1 className="text-2xl font-semibold">{t("Daily Sales Report")}</h1>
           <p className="text-sm text-[var(--muted)]">{dateLabel}</p>
         </div>
         <div className="flex gap-2">
@@ -64,38 +66,38 @@ export default async function DailyTransactionsPage({
               className="h-10 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm focus:outline-none"
             />
             <button className="rounded-xl bg-[var(--primary)] px-4 py-2 text-sm text-white">
-              Load Day
+              {t("Load Day")}
             </button>
           </form>
-          <PrintButton label="Print Report" />
+          <PrintButton label={t("Print Report")} />
         </div>
       </div>
 
       {/* Print-only header */}
       <div className="hidden text-center print:block">
-        <h1 className="text-2xl font-bold">Tailor Pro — Daily Sales Report</h1>
+        <h1 className="text-2xl font-bold">Tailor Pro — {t("Daily Sales Report")}</h1>
         <p className="text-sm">{dateLabel}</p>
-        <p className="text-xs text-gray-400">Printed: {new Date().toLocaleString()}</p>
+        <p className="text-xs text-gray-400">{t("Printed: {date}", { date: new Date().toLocaleString() })}</p>
       </div>
 
       {/* KPI summary */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Cash In (Payments)</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">{t("Cash In (Payments)")}</p>
           <p className="mt-2 text-2xl font-bold text-[var(--success)]">{formatCurrency(paymentsReceived)}</p>
-          <p className="mt-1 text-xs text-[var(--muted)]">{payments.length} transaction{payments.length !== 1 ? "s" : ""}</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">{t(payments.length !== 1 ? "{count} transactions" : "{count} transaction", { count: payments.length })}</p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Orders Created</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">{t("Orders Created")}</p>
           <p className="mt-2 text-2xl font-bold">{formatCurrency(ordersValue)}</p>
-          <p className="mt-1 text-xs text-[var(--muted)]">{orders.length} order{orders.length !== 1 ? "s" : ""}</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">{t(orders.length !== 1 ? "{count} orders" : "{count} order", { count: orders.length })}</p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Discounts Given</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">{t("Discounts Given")}</p>
           <p className="mt-2 text-2xl font-bold text-[var(--accent)]">{formatCurrency(discountsGiven)}</p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">New Outstanding</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">{t("New Outstanding")}</p>
           <p className={`mt-2 text-2xl font-bold ${outstandingNew > 0 ? "text-[var(--primary)]" : "text-[var(--success)]"}`}>
             {formatCurrency(Math.max(outstandingNew, 0))}
           </p>
@@ -105,7 +107,7 @@ export default async function DailyTransactionsPage({
       {/* Payment method breakdown */}
       {methodTotals.size > 0 && (
         <Card>
-          <h2 className="mb-3 font-semibold">Payments by Method</h2>
+          <h2 className="mb-3 font-semibold">{t("Payments by Method")}</h2>
           <div className="flex flex-wrap gap-3">
             {[...methodTotals.entries()].map(([label, amount]) => (
               <div
@@ -122,7 +124,7 @@ export default async function DailyTransactionsPage({
 
       {/* Payments detail */}
       <div>
-        <h2 className="mb-3 font-semibold">Payments Received ({payments.length})</h2>
+        <h2 className="mb-3 font-semibold">{t("Payments Received ({count})", { count: payments.length })}</h2>
         <DataTable
           headers={["Time", "Customer", "Order", "Method", "Amount", "Reference"]}
           emptyMessage="No payments recorded today."
@@ -146,7 +148,7 @@ export default async function DailyTransactionsPage({
 
       {/* Orders created today */}
       <div>
-        <h2 className="mb-3 font-semibold">Orders Created Today ({orders.length})</h2>
+        <h2 className="mb-3 font-semibold">{t("Orders Created Today ({count})", { count: orders.length })}</h2>
         <DataTable
           headers={["Order #", "Customer", "Items", "Total", "Paid Today", "Balance"]}
           emptyMessage="No orders created today."
@@ -175,11 +177,11 @@ export default async function DailyTransactionsPage({
       <Card className="border-2 border-[var(--primary)]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-[var(--muted)]">Total Cash Collected</p>
+            <p className="text-sm text-[var(--muted)]">{t("Total Cash Collected")}</p>
             <p className="text-3xl font-bold text-[var(--primary)]">{formatCurrency(paymentsReceived)}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-[var(--muted)]">Total Sales Generated</p>
+            <p className="text-sm text-[var(--muted)]">{t("Total Sales Generated")}</p>
             <p className="text-3xl font-bold">{formatCurrency(ordersValue)}</p>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { purchaseRepository } from "@/lib/repositories/purchase-repository";
 import { supplierRepository } from "@/lib/repositories/supplier-repository";
 import { prisma } from "@/lib/db/prisma";
 import { logActivity } from "@/lib/activity-log";
+import { getT } from "@/lib/i18n/server";
 
 function revalidatePurchaseViews(supplierId?: string) {
   revalidatePath("/purchases");
@@ -24,12 +25,12 @@ export async function createPurchaseAction(input: unknown) {
 
   const parsed = createPurchaseSchema.safeParse(input);
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid purchase data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid purchase data"));
   }
 
   const supplier = await supplierRepository.byId(session.tenantId, parsed.data.supplierId);
   if (!supplier) {
-    throw new Error("Supplier not found");
+    throw new Error((await getT())("Supplier not found"));
   }
 
   await purchaseRepository.createWithItems(
@@ -59,12 +60,12 @@ export async function updatePurchaseAction(purchaseId: string, formData: FormDat
   const invoiceNo = String(formData.get("invoiceNo") ?? "").trim();
   const purchaseDate = String(formData.get("purchaseDate") ?? "");
   const notes = String(formData.get("notes") ?? "");
-  if (!supplierId) throw new Error("Supplier is required");
+  if (!supplierId) throw new Error((await getT())("Supplier is required"));
 
   const existing = await prisma.purchase.findFirst({ where: { id: purchaseId, tenantId: session.tenantId } });
-  if (!existing) throw new Error("Purchase not found");
+  if (!existing) throw new Error((await getT())("Purchase not found"));
   const supplier = await supplierRepository.byId(session.tenantId, supplierId);
-  if (!supplier) throw new Error("Supplier not found");
+  if (!supplier) throw new Error((await getT())("Supplier not found"));
 
   await prisma.purchase.updateMany({
     where: { id: purchaseId, tenantId: session.tenantId },

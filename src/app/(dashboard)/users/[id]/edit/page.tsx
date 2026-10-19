@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/auth/guards";
 import { userRepository, type UserRow } from "@/lib/repositories/user-repository";
 import { updateUserAction } from "@/app/(dashboard)/users/actions";
 import { getPermissionsForRole } from "@/lib/auth/permissions";
+import { getT } from "@/lib/i18n/server";
 
 export default async function EditUserPage({
   params
@@ -14,6 +15,7 @@ export default async function EditUserPage({
   const session = await requirePermission("users.manage");
   const { id } = await params;
   const user = await userRepository.detail(id, session.tenantId);
+  const t = await getT();
 
   if (!user) {
     notFound();
@@ -25,8 +27,8 @@ export default async function EditUserPage({
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Edit User</h1>
-        <p className="text-sm text-[var(--muted)]">Update role, active status, and permissions</p>
+        <h1 className="text-2xl font-semibold">{t("Edit User")}</h1>
+        <p className="text-sm text-[var(--muted)]">{t("Update role, active status, and permissions")}</p>
       </div>
 
       <Card>

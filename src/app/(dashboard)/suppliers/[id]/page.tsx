@@ -5,6 +5,7 @@ import { DataTable } from "@/components/ui/table";
 import { requirePermission } from "@/lib/auth/guards";
 import { supplierRepository } from "@/lib/repositories/supplier-repository";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export default async function SupplierDetailPage({
   params
@@ -12,6 +13,7 @@ export default async function SupplierDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await requirePermission("suppliers.manage");
+  const t = await getT();
   const { id } = await params;
 
   const supplier = await supplierRepository.byId(session.tenantId, id);
@@ -27,39 +29,39 @@ export default async function SupplierDetailPage({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">{supplier.supplierName}</h1>
-          <p className="text-sm text-[var(--muted)]">Supplier purchase history</p>
+          <p className="text-sm text-[var(--muted)]">{t("Supplier purchase history")}</p>
         </div>
         <div className="flex gap-2">
           <Link
             href={`/suppliers/${supplier.id}/edit`}
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            Edit Supplier
+            {t("Edit Supplier")}
           </Link>
           <Link
             href="/suppliers"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            ← Suppliers
+            ← {t("Suppliers")}
           </Link>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <p className="text-sm text-[var(--muted)]">Total Purchases</p>
+          <p className="text-sm text-[var(--muted)]">{t("Total Purchases")}</p>
           <p className="mt-2 text-2xl font-semibold">{formatCurrency(toNumber(totalAmount))}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Purchase Count</p>
+          <p className="text-sm text-[var(--muted)]">{t("Purchase Count")}</p>
           <p className="mt-2 text-2xl font-semibold">{purchaseCount}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Phone</p>
+          <p className="text-sm text-[var(--muted)]">{t("Phone")}</p>
           <p className="mt-2 text-lg font-semibold">{supplier.phone ?? "—"}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Email</p>
+          <p className="text-sm text-[var(--muted)]">{t("Email")}</p>
           <p className="mt-2 truncate text-lg font-semibold">{supplier.email ?? "—"}</p>
         </Card>
       </div>
@@ -68,13 +70,13 @@ export default async function SupplierDetailPage({
         <Card>
           {supplier.address && (
             <p className="text-sm">
-              <span className="text-[var(--muted)]">Address: </span>
+              <span className="text-[var(--muted)]">{t("Address")}: </span>
               {supplier.address}
             </p>
           )}
           {supplier.notes && (
             <p className="mt-1 text-sm">
-              <span className="text-[var(--muted)]">Notes: </span>
+              <span className="text-[var(--muted)]">{t("Notes")}: </span>
               {supplier.notes}
             </p>
           )}
@@ -82,7 +84,7 @@ export default async function SupplierDetailPage({
       )}
 
       <Card>
-        <p className="mb-4 text-sm font-semibold">Purchases from this supplier</p>
+        <p className="mb-4 text-sm font-semibold">{t("Purchases from this supplier")}</p>
         <DataTable
           headers={["Date", "Invoice", "Items", "Total", ""]}
           emptyMessage="No purchases recorded for this supplier."
@@ -105,7 +107,7 @@ export default async function SupplierDetailPage({
                       href={`/purchases/${purchase.id}`}
                       className="rounded-lg bg-[var(--primary)]/10 px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/20"
                     >
-                      View
+                      {t("View")}
                     </Link>
                   </td>
                 </tr>

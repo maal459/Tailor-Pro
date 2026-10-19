@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db/prisma";
 import { getTenantBySlug } from "@/lib/tenant";
 import { getBusinessSettings } from "@/lib/settings";
 import { toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { ShopClient, type ShopProduct } from "@/app/shop/[slug]/shop-client";
 
 const PAGE_SIZE = 24;
@@ -16,9 +18,10 @@ type SearchParams = Promise<{ q?: string; category?: string; page?: string }>;
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const tenant = await getTenantBySlug(slug);
-  if (!tenant) return { title: "Shop not found" };
+  const t = await getT();
+  if (!tenant) return { title: t("Shop not found") };
   const settings = await getBusinessSettings(tenant.id);
-  return { title: `${settings.businessName} · Online Shop` };
+  return { title: `${settings.businessName} · ${t("Online Shop")}` };
 }
 
 function Unavailable({ title, message }: { title: string; message: string }) {
@@ -43,13 +46,14 @@ export default async function ShopPage({ params, searchParams }: { params: Param
 
   const tenant = await getTenantBySlug(slug);
   if (!tenant) notFound();
+  const t = await getT();
 
   const settings = await getBusinessSettings(tenant.id);
   if (tenant.status !== "ACTIVE" || !settings.onlineShopEnabled) {
     return (
       <Unavailable
         title={settings.businessName}
-        message="This shop is not accepting online orders right now. Please contact us directly."
+        message={t("This shop is not accepting online orders right now. Please contact us directly.")}
       />
     );
   }
@@ -119,10 +123,11 @@ export default async function ShopPage({ params, searchParams }: { params: Param
               {settings.businessName.slice(0, 2)}
             </div>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-semibold">{settings.businessName}</h1>
             <p className="truncate text-sm text-[var(--muted)]">{settings.receiptSubtitle}</p>
           </div>
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -131,7 +136,7 @@ export default async function ShopPage({ params, searchParams }: { params: Param
           <input
             name="q"
             defaultValue={q ?? ""}
-            placeholder="Search products"
+            placeholder={t("Search products")}
             className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm outline-none focus:border-[var(--primary)]"
           />
           <select
@@ -139,7 +144,7 @@ export default async function ShopPage({ params, searchParams }: { params: Param
             defaultValue={categoryId ?? ""}
             className="h-10 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm outline-none focus:border-[var(--primary)]"
           >
-            <option value="">All categories</option>
+            <option value="">{t("All categories")}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -147,7 +152,7 @@ export default async function ShopPage({ params, searchParams }: { params: Param
             ))}
           </select>
           <button type="submit" className="h-10 rounded-xl bg-[var(--primary)] px-4 text-sm font-medium text-white hover:opacity-90">
-            Search
+            {t("Search")}
           </button>
         </Form>
 
@@ -157,15 +162,15 @@ export default async function ShopPage({ params, searchParams }: { params: Param
           <div className="flex items-center justify-center gap-3 text-sm">
             {page > 1 && (
               <Link href={pageHref(page - 1)} className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 hover:bg-black/5">
-                Previous
+                {t("Previous")}
               </Link>
             )}
             <span className="text-[var(--muted)]">
-              Page {page} of {pageCount}
+              {t("Page {page} of {pages}", { page, pages: pageCount })}
             </span>
             {page < pageCount && (
               <Link href={pageHref(page + 1)} className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 hover:bg-black/5">
-                Next
+                {t("Next")}
               </Link>
             )}
           </div>

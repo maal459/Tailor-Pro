@@ -8,6 +8,7 @@ import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { financeService } from "@/lib/services/finance-service";
 import { formatCurrency, toNumber, cn } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export default async function OrderDetailPage({
   params
@@ -15,6 +16,7 @@ export default async function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await requireAuth();
+  const t = await getT();
   const { id } = await params;
 
   const order = await prisma.order.findFirst({
@@ -40,29 +42,29 @@ export default async function OrderDetailPage({
             <Link href={`/customers/${order.customerId}`} className="text-[var(--primary)] hover:underline">
               {order.customer.fullName}
             </Link>{" "}
-            · {order.customer.phone} · ordered {format(order.orderDate, "dd MMM yyyy")}
+            · {order.customer.phone} · {t("ordered {date}", { date: format(order.orderDate, "dd MMM yyyy") })}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href={`/receipts?orderId=${order.id}`} className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">Receipt</Link>
-          <Link href={`/orders/${order.id}/edit`} className="rounded-xl bg-[var(--violet)]/10 px-4 py-2 text-sm font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20">Edit</Link>
-          <Link href="/orders" className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">← Orders</Link>
+          <Link href={`/receipts?orderId=${order.id}`} className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">{t("Receipt")}</Link>
+          <Link href={`/orders/${order.id}/edit`} className="rounded-xl bg-[var(--violet)]/10 px-4 py-2 text-sm font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20">{t("Edit")}</Link>
+          <Link href="/orders" className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">← {t("Orders")}</Link>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card><p className="text-sm text-[var(--muted)]">Total</p><p className="mt-2 text-2xl font-semibold">{formatCurrency(totals?.grossTotal ?? 0)}</p></Card>
-        <Card><p className="text-sm text-[var(--muted)]">Paid</p><p className="mt-2 text-2xl font-semibold text-emerald-600">{formatCurrency(totals?.paid ?? 0)}</p></Card>
-        <Card><p className="text-sm text-[var(--muted)]">Balance</p><p className={cn("mt-2 text-2xl font-semibold", (totals?.balance ?? 0) > 0 ? "text-red-600" : "text-emerald-600")}>{formatCurrency(totals?.balance ?? 0)}</p></Card>
+        <Card><p className="text-sm text-[var(--muted)]">{t("Total")}</p><p className="mt-2 text-2xl font-semibold">{formatCurrency(totals?.grossTotal ?? 0)}</p></Card>
+        <Card><p className="text-sm text-[var(--muted)]">{t("Paid")}</p><p className="mt-2 text-2xl font-semibold text-emerald-600">{formatCurrency(totals?.paid ?? 0)}</p></Card>
+        <Card><p className="text-sm text-[var(--muted)]">{t("Balance")}</p><p className={cn("mt-2 text-2xl font-semibold", (totals?.balance ?? 0) > 0 ? "text-red-600" : "text-emerald-600")}>{formatCurrency(totals?.balance ?? 0)}</p></Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Delivery</p>
+          <p className="text-sm text-[var(--muted)]">{t("Delivery")}</p>
           <p className="mt-2 text-lg font-semibold">{order.deliveryDate ? format(order.deliveryDate, "dd MMM yyyy") : "—"}</p>
-          <p className="text-xs text-[var(--muted)]">Priority: {order.priority}</p>
+          <p className="text-xs text-[var(--muted)]">{t("Priority")}: {t(order.priority)}</p>
         </Card>
       </div>
 
       <Card>
-        <p className="mb-3 text-sm font-semibold">Items</p>
+        <p className="mb-3 text-sm font-semibold">{t("Items")}</p>
         <DataTable headers={["Garment", "Fabric", "Qty", "Unit price", "Subtotal"]} emptyMessage="No items.">
           {order.items.map((item) => (
             <tr key={item.id} className="border-t border-[var(--border)]">
@@ -75,12 +77,12 @@ export default async function OrderDetailPage({
           ))}
         </DataTable>
         {toNumber(order.discountAmount) > 0 && (
-          <p className="mt-2 text-right text-sm text-[var(--muted)]">Discount: −{formatCurrency(toNumber(order.discountAmount))}</p>
+          <p className="mt-2 text-right text-sm text-[var(--muted)]">{t("Discount")}: −{formatCurrency(toNumber(order.discountAmount))}</p>
         )}
       </Card>
 
       <Card>
-        <p className="mb-3 text-sm font-semibold">Payments</p>
+        <p className="mb-3 text-sm font-semibold">{t("Payments")}</p>
         <DataTable headers={["Date", "Method", "Reference", "Amount"]} emptyMessage="No payments recorded.">
           {order.payments.map((p) => (
             <tr key={p.id} className="border-t border-[var(--border)]">
@@ -94,7 +96,7 @@ export default async function OrderDetailPage({
       </Card>
 
       {order.notes && (
-        <Card><p className="text-sm"><span className="text-[var(--muted)]">Notes: </span>{order.notes}</p></Card>
+        <Card><p className="text-sm"><span className="text-[var(--muted)]">{t("Notes")}: </span>{order.notes}</p></Card>
       )}
     </div>
   );

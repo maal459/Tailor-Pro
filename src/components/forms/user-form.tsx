@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toaster";
 import { ALL_PERMISSIONS, ROLE_PRESETS } from "@/lib/auth/permissions";
+import { useT } from "@/lib/i18n/client";
 
 type Mode = "create" | "edit";
 
@@ -26,6 +27,7 @@ const ROLE_OPTIONS = ["admin", "manager", "accountant", "tailor", "viewer"];
 export function UserForm({ mode, initialValues, action }: Props) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [isPending, startTransition] = useTransition();
   const [role, setRole] = useState(initialValues?.role ?? "viewer");
   const [permissions, setPermissions] = useState<string[]>(initialValues?.permissions ?? ROLE_PRESETS.viewer);
@@ -54,11 +56,11 @@ export function UserForm({ mode, initialValues, action }: Props) {
     startTransition(async () => {
       try {
         await action(formData);
-        toast.push(mode === "create" ? "User created" : "User updated");
+        toast.push(mode === "create" ? t("User created") : t("User updated"));
         router.push("/users");
         router.refresh();
       } catch (error) {
-        toast.push(error instanceof Error ? error.message : "Failed to save user", "error");
+        toast.push(error instanceof Error ? error.message : t("Failed to save user"), "error");
       }
     });
   };
@@ -67,24 +69,24 @@ export function UserForm({ mode, initialValues, action }: Props) {
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="grid gap-3 md:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--muted)]">Full name</label>
-          <Input name="fullName" defaultValue={initialValues?.fullName ?? ""} placeholder="User full name" required />
+          <label className="mb-1 block text-xs font-medium text-[var(--muted)]">{t("Full name")}</label>
+          <Input name="fullName" defaultValue={initialValues?.fullName ?? ""} placeholder={t("User full name")} required />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--muted)]">Email</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--muted)]">{t("Email")}</label>
           <Input name="email" type="email" defaultValue={initialValues?.email ?? ""} placeholder="user@example.com" required />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--muted)]">{mode === "create" ? "Password" : "New password"}</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--muted)]">{mode === "create" ? t("Password") : t("New password")}</label>
           <Input
             name="password"
             type="password"
-            placeholder={mode === "create" ? "At least 8 characters" : "Leave blank to keep current password"}
+            placeholder={mode === "create" ? t("At least 8 characters") : t("Leave blank to keep current password")}
             required={mode === "create"}
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--muted)]">Role</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--muted)]">{t("Role")}</label>
           <select
             name="role"
             value={role}
@@ -93,7 +95,7 @@ export function UserForm({ mode, initialValues, action }: Props) {
           >
             {ROLE_OPTIONS.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {t(option)}
               </option>
             ))}
           </select>
@@ -102,21 +104,21 @@ export function UserForm({ mode, initialValues, action }: Props) {
 
       <label className="flex items-center gap-2 text-sm">
         <input name="isActive" type="checkbox" defaultChecked={initialValues?.isActive ?? true} className="h-4 w-4" />
-        Active user
+        {t("Active user")}
       </label>
 
       <div>
         <div className="mb-2 flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold">Permissions</p>
-            <p className="text-xs text-[var(--muted)]">{permissionCount} selected</p>
+            <p className="text-sm font-semibold">{t("Permissions")}</p>
+            <p className="text-xs text-[var(--muted)]">{t("{count} selected", { count: permissionCount })}</p>
           </div>
           <button
             type="button"
             className="rounded-lg border border-[var(--border)] px-3 py-1 text-xs"
             onClick={() => setPermissions(ROLE_PRESETS[role] ?? ROLE_PRESETS.viewer)}
           >
-            Reset to role preset
+            {t("Reset to role preset")}
           </button>
         </div>
 
@@ -129,7 +131,7 @@ export function UserForm({ mode, initialValues, action }: Props) {
                 onChange={() => toggle(permission)}
                 className="h-4 w-4"
               />
-              <span>{permission}</span>
+              <span>{t(permission)}</span>
             </label>
           ))}
         </div>
@@ -137,10 +139,10 @@ export function UserForm({ mode, initialValues, action }: Props) {
 
       <div className="flex gap-2">
         <Button type="submit" disabled={isPending}>
-          {isPending ? (mode === "create" ? "Creating…" : "Saving…") : mode === "create" ? "Create User" : "Save Changes"}
+          {isPending ? (mode === "create" ? t("Creating…") : t("Saving…")) : mode === "create" ? t("Create User") : t("Save Changes")}
         </Button>
         <Button type="button" variant="secondary" onClick={() => router.back()}>
-          Cancel
+          {t("Cancel")}
         </Button>
       </div>
     </form>

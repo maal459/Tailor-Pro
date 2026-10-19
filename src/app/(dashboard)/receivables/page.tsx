@@ -8,6 +8,7 @@ import { requireAuth } from "@/lib/auth/guards";
 import { getReceivables } from "@/lib/repositories/receivables-repository";
 import { getReportRange, type ReportPeriod } from "@/lib/report-range";
 import { formatCurrency, cn } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 const PERIODS: { id: ReportPeriod; label: string }[] = [
   { id: "all", label: "All Time" },
@@ -22,6 +23,7 @@ export default async function ReceivablesPage({
   searchParams: Promise<{ q?: string; period?: string; from?: string; to?: string }>;
 }) {
   const session = await requireAuth();
+  const t = await getT();
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
   const period: ReportPeriod = (["all", "month", "year", "custom"].includes(params.period ?? "")
@@ -41,8 +43,8 @@ export default async function ReceivablesPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Receivables</h1>
-        <p className="text-sm text-[var(--muted)]">Customers with an outstanding balance</p>
+        <h1 className="text-2xl font-semibold">{t("Receivables")}</h1>
+        <p className="text-sm text-[var(--muted)]">{t("Customers with an outstanding balance")}</p>
       </div>
 
       {/* Period tabs */}
@@ -56,7 +58,7 @@ export default async function ReceivablesPage({
               period === p.id ? "bg-[var(--primary)] text-white shadow" : "text-[var(--muted)] hover:text-[var(--text)]"
             )}
           >
-            {p.label}
+            {t(p.label)}
           </Link>
         ))}
       </div>
@@ -66,22 +68,22 @@ export default async function ReceivablesPage({
         <form method="get" className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="period" value={period === "custom" ? "custom" : period} />
           <div className="flex flex-1 flex-col gap-1">
-            <label className="text-xs font-medium text-[var(--muted)]">Search customer</label>
-            <Input name="q" defaultValue={q} placeholder="Name, phone, or customer number" />
+            <label className="text-xs font-medium text-[var(--muted)]">{t("Search customer")}</label>
+            <Input name="q" defaultValue={q} placeholder={t("Name, phone, or customer number")} />
           </div>
           {period === "custom" && (
             <>
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-[var(--muted)]">From</label>
+                <label className="text-xs font-medium text-[var(--muted)]">{t("From")}</label>
                 <Input type="date" name="from" defaultValue={params.from ?? format(from, "yyyy-MM-dd")} className="w-40" />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-[var(--muted)]">To</label>
+                <label className="text-xs font-medium text-[var(--muted)]">{t("To")}</label>
                 <Input type="date" name="to" defaultValue={params.to ?? format(to, "yyyy-MM-dd")} className="w-40" />
               </div>
             </>
           )}
-          <Button type="submit">Apply</Button>
+          <Button type="submit">{t("Apply")}</Button>
         </form>
       </Card>
 
@@ -107,7 +109,7 @@ export default async function ReceivablesPage({
                   href={`/customers/${r.id}`}
                   className="rounded-lg bg-[var(--primary)]/10 px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/20"
                 >
-                  View
+                  {t("View")}
                 </Link>
               </td>
             </tr>
@@ -117,10 +119,10 @@ export default async function ReceivablesPage({
         {/* Total at the bottom */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border-2 border-[var(--primary)] px-4 py-3">
           <span className="text-sm font-medium">
-            Total outstanding
+            {t("Total outstanding")}
             <span className="text-[var(--muted)]">
-              {" "}· {customerCount} customer{customerCount !== 1 ? "s" : ""}
-              {rows.length < customerCount ? ` (showing top ${rows.length})` : ""}
+              {" "}· {t(customerCount !== 1 ? "{count} customers" : "{count} customer", { count: customerCount })}
+              {rows.length < customerCount ? t(" (showing top {count})", { count: rows.length }) : ""}
             </span>
           </span>
           <span className="text-xl font-bold text-red-600">{formatCurrency(totalOutstanding)}</span>

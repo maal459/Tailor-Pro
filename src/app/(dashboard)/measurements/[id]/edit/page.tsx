@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { updateMeasurementProfileAction } from "@/app/(dashboard)/measurements/actions";
+import { getT } from "@/lib/i18n/server";
 
 export default async function EditMeasurementPage({
   params
@@ -14,6 +15,7 @@ export default async function EditMeasurementPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await requireAuth();
+  const t = await getT();
   const { id } = await params;
 
   const [profile, garmentTypes] = await Promise.all([
@@ -33,7 +35,7 @@ export default async function EditMeasurementPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Edit Measurement Profile</h1>
+        <h1 className="text-2xl font-semibold">{t("Edit Measurement Profile")}</h1>
         <p className="text-sm text-[var(--muted)]">
           {profile.customer.customerNumber} · {profile.customer.fullName}
         </p>
@@ -42,11 +44,11 @@ export default async function EditMeasurementPage({
       <Card>
         <form action={updateMeasurementProfileAction.bind(null, id)} className="space-y-3">
           <label className="block space-y-1 text-sm">
-            <span className="font-medium">Profile name *</span>
+            <span className="font-medium">{t("Profile name")} *</span>
             <Input name="name" defaultValue={profile.name} required />
           </label>
           <label className="block space-y-1 text-sm">
-            <span className="font-medium">Garment type</span>
+            <span className="font-medium">{t("Garment type")}</span>
             <Select name="garmentTypeId" defaultValue={profile.garmentTypeId}>
               {garmentTypes.map((gt) => (
                 <option key={gt.id} value={gt.id}>{gt.name}</option>
@@ -54,7 +56,7 @@ export default async function EditMeasurementPage({
             </Select>
           </label>
           <label className="block space-y-1 text-sm">
-            <span className="font-medium">Measurements (one per line, e.g. "Chest: 40")</span>
+            <span className="font-medium">{t("Measurements (one per line, e.g. \"Chest: 40\")")}</span>
             <textarea
               name="fields"
               defaultValue={fieldsText}
@@ -63,16 +65,16 @@ export default async function EditMeasurementPage({
             />
           </label>
           <label className="block space-y-1 text-sm">
-            <span className="font-medium">Notes</span>
+            <span className="font-medium">{t("Notes")}</span>
             <Input name="notes" defaultValue={profile.notes ?? ""} />
           </label>
           <div className="flex gap-2">
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit">{t("Save changes")}</Button>
             <Link
               href="/measurements"
               className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
             >
-              Cancel
+              {t("Cancel")}
             </Link>
           </div>
         </form>

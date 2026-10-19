@@ -12,6 +12,7 @@ import { onlineOrderRepository } from "@/lib/repositories/online-order-repositor
 import { ONLINE_ORDER_STATUSES } from "@/lib/validators/online-order";
 import { getTenant } from "@/lib/tenant";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 const PAGE_SIZE = 20;
 
@@ -27,6 +28,7 @@ export default async function OnlineOrdersPage({
     ? (params.status as OnlineOrderStatus)
     : undefined;
   const page = Math.max(1, Number(params.page ?? "1") || 1);
+  const t = await getT();
 
   const [{ rows, total }, counts, tenant] = await Promise.all([
     onlineOrderRepository.list(session.tenantId, { query: q, status }, page, PAGE_SIZE),
@@ -48,8 +50,8 @@ export default async function OnlineOrdersPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">Online Orders</h1>
-          <p className="text-sm text-[var(--muted)]">Orders customers placed on your public shop page</p>
+          <h1 className="text-2xl font-semibold">{t("Online Orders")}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Orders customers placed on your public shop page")}</p>
         </div>
         {shopPath && (
           <a
@@ -58,7 +60,7 @@ export default async function OnlineOrdersPage({
             rel="noreferrer"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            Open shop page
+            {t("Open shop page")}
           </a>
         )}
       </div>
@@ -67,7 +69,7 @@ export default async function OnlineOrdersPage({
         {ONLINE_ORDER_STATUSES.map((s) => (
           <Link key={s} href={`/online-orders?status=${s}`}>
             <Card className={status === s ? "border-[var(--primary)]" : undefined}>
-              <p className="text-sm text-[var(--muted)]">{s}</p>
+              <p className="text-sm text-[var(--muted)]">{t(s)}</p>
               <p className="mt-2 text-2xl font-semibold">{counts[s] ?? 0}</p>
             </Card>
           </Link>
@@ -76,30 +78,30 @@ export default async function OnlineOrdersPage({
 
       <Card>
         <form className="mb-4 grid gap-3 md:grid-cols-4" method="get">
-          <Input name="q" placeholder="Search order no., name or phone" defaultValue={q} className="md:col-span-2" />
+          <Input name="q" placeholder={t("Search order no., name or phone")} defaultValue={q} className="md:col-span-2" />
           <Select name="status" defaultValue={status ?? ""}>
-            <option value="">All statuses</option>
+            <option value="">{t("All statuses")}</option>
             {ONLINE_ORDER_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {t(s)}
               </option>
             ))}
           </Select>
           <div className="flex gap-2">
             <Button variant="secondary" type="submit">
-              Filter
+              {t("Filter")}
             </Button>
             {(q || status) && (
               <Link href="/online-orders" className="inline-flex items-center rounded-xl border border-[var(--border)] px-4 py-2 text-sm">
-                Clear
+                {t("Clear")}
               </Link>
             )}
           </div>
         </form>
 
         <DataTable
-          headers={["Order", "Date", "Customer", "Phone", "Items", "Total", "Status", ""]}
-          emptyMessage="No online orders yet."
+          headers={[t("Order"), t("Date"), t("Customer"), t("Phone"), t("Items"), t("Total"), t("Status"), ""]}
+          emptyMessage={t("No online orders yet.")}
         >
           {rows.length
             ? rows.map((order) => (
@@ -118,7 +120,7 @@ export default async function OnlineOrdersPage({
                       href={`/online-orders/${order.id}`}
                       className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
                     >
-                      View
+                      {t("View")}
                     </Link>
                   </td>
                 </tr>
@@ -130,15 +132,15 @@ export default async function OnlineOrdersPage({
           <div className="mt-4 flex items-center justify-end gap-3 text-sm">
             {page > 1 && (
               <Link href={pageHref(page - 1)} className="rounded-xl border border-[var(--border)] px-3 py-1.5">
-                Previous
+                {t("Previous")}
               </Link>
             )}
             <span className="text-[var(--muted)]">
-              Page {page} of {pageCount}
+              {t("Page {page} of {pages}", { page, pages: pageCount })}
             </span>
             {page < pageCount && (
               <Link href={pageHref(page + 1)} className="rounded-xl border border-[var(--border)] px-3 py-1.5">
-                Next
+                {t("Next")}
               </Link>
             )}
           </div>

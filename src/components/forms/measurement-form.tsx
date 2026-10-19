@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { AsyncCombobox } from "@/components/ui/async-combobox";
 import { useToast } from "@/components/ui/toaster";
+import { useT } from "@/lib/i18n/client";
 
 type Option = { id: string; label: string };
 
@@ -22,6 +23,7 @@ export function MeasurementForm({
   const [fields, setFields]               = useState("");
   const [isPending, startTransition]      = useTransition();
   const toast                             = useToast();
+  const t                                 = useT();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,11 +36,11 @@ export function MeasurementForm({
         formData.set("notes",         notes);
         formData.set("fields",        fields);
         await createMeasurementProfileAction(formData);
-        toast.push("Measurement profile saved");
+        toast.push(t("Measurement profile saved"));
         setCustomerId(""); setGarmentTypeId(""); setName("");
         setNotes(""); setFields("");
       } catch (err) {
-        toast.push(err instanceof Error ? err.message : "Failed to save profile", "error");
+        toast.push(err instanceof Error ? err.message : t("Failed to save profile"), "error");
       }
     });
   };
@@ -50,7 +52,7 @@ export function MeasurementForm({
         endpoint="/api/search/customers"
         value={customerId}
         onSelect={(r) => setCustomerId(r?.id ?? "")}
-        placeholder="Search by phone or name…"
+        placeholder={t("Search by phone or name…")}
       />
 
       {/* Garment type */}
@@ -59,33 +61,33 @@ export function MeasurementForm({
         onChange={(e) => setGarmentTypeId(e.target.value)}
         required
       >
-        <option value="">Select garment type</option>
+        <option value="">{t("Select garment type")}</option>
         {garmentTypes.map((gt) => (
           <option key={gt.id} value={gt.id}>{gt.label}</option>
         ))}
       </Select>
 
       <Input
-        placeholder="Profile name (e.g., Suit Standard)"
+        placeholder={t("Profile name (e.g., Suit Standard)")}
         value={name}
         onChange={(e) => setName(e.target.value)}
         required
       />
       <Input
-        placeholder="Measurement notes"
+        placeholder={t("Measurement notes")}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
 
       <textarea
         className="min-h-36 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 text-sm md:col-span-2 focus:border-[var(--primary)] focus:outline-none"
-        placeholder={"Neck: 15\nShoulder: 18\nSleeve: 24\nChest: 40"}
+        placeholder={`${t("Neck")}: 15\n${t("Shoulder")}: 18\n${t("Sleeve")}: 24\n${t("Chest")}: 40`}
         value={fields}
         onChange={(e) => setFields(e.target.value)}
       />
 
       <Button type="submit" disabled={isPending}>
-        {isPending ? "Saving…" : "Save Profile"}
+        {isPending ? t("Saving…") : t("Save Profile")}
       </Button>
     </form>
   );

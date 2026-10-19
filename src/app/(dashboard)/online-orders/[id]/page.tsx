@@ -10,6 +10,7 @@ import { onlineOrderRepository } from "@/lib/repositories/online-order-repositor
 import { prisma } from "@/lib/db/prisma";
 import { ONLINE_ORDER_STATUSES } from "@/lib/validators/online-order";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 import { linkOnlineOrderCustomerAction, updateOnlineOrderStatusAction } from "@/app/(dashboard)/online-orders/actions";
 import { DeleteOnlineOrderButton } from "@/app/(dashboard)/online-orders/[id]/delete-button";
 
@@ -23,6 +24,7 @@ const STATUS_ACTION_LABEL: Record<(typeof ONLINE_ORDER_STATUSES)[number], string
 export default async function OnlineOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requirePermission("orders.manage");
   const { id } = await params;
+  const t = await getT();
 
   const order = await onlineOrderRepository.byId(session.tenantId, id);
   if (!order) notFound();
@@ -40,41 +42,41 @@ export default async function OnlineOrderDetailPage({ params }: { params: Promis
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <Link href="/online-orders" className="text-sm text-[var(--muted)] hover:underline">
-            ← Online Orders
+            ← {t("Online Orders")}
           </Link>
-          <h1 className="text-2xl font-semibold">Online Order {order.orderNumber}</h1>
-          <p className="text-sm text-[var(--muted)]">Placed {format(order.createdAt, "dd MMM yyyy, HH:mm")}</p>
+          <h1 className="text-2xl font-semibold">{t("Online Order {number}", { number: order.orderNumber })}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Placed {date}", { date: format(order.createdAt, "dd MMM yyyy, HH:mm") })}</p>
         </div>
         <Badge label={order.status} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="space-y-2 text-sm">
-          <p className="text-base font-semibold">Customer</p>
+          <p className="text-base font-semibold">{t("Customer")}</p>
           <p>
-            <span className="text-[var(--muted)]">Name: </span>
+            <span className="text-[var(--muted)]">{t("Name")}: </span>
             {order.customerName}
           </p>
           <p>
-            <span className="text-[var(--muted)]">Phone: </span>
+            <span className="text-[var(--muted)]">{t("Phone")}: </span>
             {order.phone}
           </p>
           {order.email && (
             <p>
-              <span className="text-[var(--muted)]">Email: </span>
+              <span className="text-[var(--muted)]">{t("Email")}: </span>
               {order.email}
             </p>
           )}
           {order.address && (
             <p>
-              <span className="text-[var(--muted)]">Address: </span>
+              <span className="text-[var(--muted)]">{t("Address")}: </span>
               {order.address}
             </p>
           )}
           <div className="border-t border-[var(--border)] pt-2">
             {order.customer ? (
               <p>
-                <span className="text-[var(--muted)]">Customer record: </span>
+                <span className="text-[var(--muted)]">{t("Customer record:")} </span>
                 <Link href={`/customers/${order.customer.id}`} className="font-medium text-[var(--primary)] hover:underline">
                   {order.customer.fullName} ({order.customer.customerNumber})
                 </Link>
@@ -83,13 +85,13 @@ export default async function OnlineOrderDetailPage({ params }: { params: Promis
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[var(--muted)]">
                   {matchingCustomer
-                    ? `Existing customer with this phone: ${matchingCustomer.fullName}`
-                    : "Not linked to a customer record."}
+                    ? t("Existing customer with this phone: {name}", { name: matchingCustomer.fullName })
+                    : t("Not linked to a customer record.")}
                 </span>
                 <ActionButton
-                  label={matchingCustomer ? "Link to customer" : "Save as customer"}
+                  label={matchingCustomer ? t("Link to customer") : t("Save as customer")}
                   action={linkOnlineOrderCustomerAction.bind(null, order.id)}
-                  successMessage="Customer linked"
+                  successMessage={t("Customer linked")}
                   className="rounded-lg bg-[var(--primary)]/10 px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/20"
                 />
               </div>
@@ -98,15 +100,15 @@ export default async function OnlineOrderDetailPage({ params }: { params: Promis
         </Card>
 
         <Card className="space-y-3 text-sm">
-          <p className="text-base font-semibold">Status</p>
+          <p className="text-base font-semibold">{t("Status")}</p>
           <div className="flex flex-wrap gap-2">
             {ONLINE_ORDER_STATUSES.filter((s) => s !== order.status).map((s) => (
               <ActionButton
                 key={s}
-                label={STATUS_ACTION_LABEL[s]}
+                label={t(STATUS_ACTION_LABEL[s])}
                 action={updateOnlineOrderStatusAction.bind(null, order.id, s)}
-                successMessage={`Order marked ${s}`}
-                confirmText={s === "CANCELLED" ? "Cancel this order?" : undefined}
+                successMessage={t("Order marked {status}", { status: t(s) })}
+                confirmText={s === "CANCELLED" ? t("Cancel this order?") : undefined}
                 className={
                   s === "CANCELLED"
                     ? "rounded-lg bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-500/20"
@@ -117,7 +119,7 @@ export default async function OnlineOrderDetailPage({ params }: { params: Promis
           </div>
           {order.notes && (
             <div className="border-t border-[var(--border)] pt-2">
-              <p className="text-[var(--muted)]">Customer notes</p>
+              <p className="text-[var(--muted)]">{t("Customer notes")}</p>
               <p className="whitespace-pre-wrap">{order.notes}</p>
             </div>
           )}
@@ -127,7 +129,10 @@ export default async function OnlineOrderDetailPage({ params }: { params: Promis
         </Card>
       </div>
 
-      <DataTable headers={["Product", "Unit price", "Qty", "In stock now", "Subtotal"]} emptyMessage="No items.">
+      <DataTable
+        headers={[t("Product"), t("Unit price"), t("Qty"), t("In stock now"), t("Subtotal")]}
+        emptyMessage={t("No items.")}
+      >
         {order.items.map((item) => (
           <tr key={item.id} className="border-t border-[var(--border)]">
             <td className="px-4 py-3 font-medium">
@@ -137,7 +142,7 @@ export default async function OnlineOrderDetailPage({ params }: { params: Promis
                 </Link>
               ) : (
                 <>
-                  {item.productName} <span className="text-xs text-[var(--muted)]">(deleted)</span>
+                  {item.productName} <span className="text-xs text-[var(--muted)]">({t("deleted")})</span>
                 </>
               )}
             </td>
@@ -149,7 +154,7 @@ export default async function OnlineOrderDetailPage({ params }: { params: Promis
         ))}
         <tr className="border-t border-[var(--border)] font-semibold">
           <td className="px-4 py-3" colSpan={4}>
-            Total
+            {t("Total")}
           </td>
           <td className="px-4 py-3">{formatCurrency(toNumber(order.total))}</td>
         </tr>

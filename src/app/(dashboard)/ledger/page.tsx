@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { financeService } from "@/lib/services/finance-service";
 import { formatCurrency } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 import { PrintButton } from "@/components/ui/print-button";
 import { CustomerHistorySelector } from "@/components/forms/customer-history-selector";
 
@@ -13,6 +14,7 @@ export default async function LedgerPage({
   searchParams: Promise<{ customerId?: string }>;
 }) {
   const session = await requireAuth();
+  const t = await getT();
   const params = await searchParams;
 
   const selectedCustomerId = params.customerId;
@@ -29,8 +31,8 @@ export default async function LedgerPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Customer Ledger</h1>
-        <p className="text-sm text-[var(--muted)]">Complete debit/credit statement per customer</p>
+        <h1 className="text-2xl font-semibold">{t("Customer Ledger")}</h1>
+        <p className="text-sm text-[var(--muted)]">{t("Complete debit/credit statement per customer")}</p>
       </div>
 
       <Card>
@@ -40,7 +42,7 @@ export default async function LedgerPage({
             selectedId={selectedCustomerId ?? ""}
             initialLabel={selectedCustomer ? `${selectedCustomer.phone} · ${selectedCustomer.fullName}` : ""}
           />
-          <PrintButton />
+          <PrintButton label={t("Print")} />
         </div>
       </Card>
 
@@ -48,7 +50,11 @@ export default async function LedgerPage({
         {ledger.map((entry, index) => (
           <tr key={`${entry.description}-${index}`} className="border-t border-[var(--border)]">
             <td className="px-4 py-3">{entry.date.toDateString()}</td>
-            <td className="px-4 py-3">{entry.description}</td>
+            <td className="px-4 py-3">
+              {entry.description.startsWith("Order ")
+                ? t("Order {number}", { number: entry.description.slice("Order ".length) })
+                : t(entry.description)}
+            </td>
             <td className="px-4 py-3">{formatCurrency(entry.debit)}</td>
             <td className="px-4 py-3">{formatCurrency(entry.credit)}</td>
             <td className="px-4 py-3 font-semibold">{formatCurrency(entry.balance)}</td>

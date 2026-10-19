@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { formatCurrency, toNumber } from "@/lib/utils";
 import { CustomerHistorySelector } from "@/components/forms/customer-history-selector";
+import { getT } from "@/lib/i18n/server";
 
 type SearchParams = Promise<{ customerId?: string }>;
 
@@ -13,6 +14,7 @@ export default async function OrderHistoryPage({
   searchParams: SearchParams;
 }) {
   const session = await requireAuth();
+  const t = await getT();
   const params = await searchParams;
 
   const selectedCustomerId = params.customerId ?? "";
@@ -46,14 +48,14 @@ export default async function OrderHistoryPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Order History</h1>
-        <p className="text-sm text-[var(--muted)]">See how many orders each customer has made and what they owe</p>
+        <h1 className="text-2xl font-semibold">{t("Order History")}</h1>
+        <p className="text-sm text-[var(--muted)]">{t("See how many orders each customer has made and what they owe")}</p>
       </div>
 
       <Card className="no-print">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1">
-            <label className="mb-1 block text-xs font-medium text-[var(--muted)]">Search customer</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--muted)]">{t("Search customer")}</label>
             <CustomerHistorySelector
               selectedId={selectedCustomerId}
               initialLabel={customer ? `${customer.phone} · ${customer.fullName}` : ""}
@@ -61,19 +63,19 @@ export default async function OrderHistoryPage({
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Card className="p-3">
-              <p className="text-xs text-[var(--muted)]">Total Orders</p>
+              <p className="text-xs text-[var(--muted)]">{t("Total Orders")}</p>
               <p className="mt-1 text-xl font-bold">{totalOrders}</p>
             </Card>
             <Card className="p-3">
-              <p className="text-xs text-[var(--muted)]">Total Ordered</p>
+              <p className="text-xs text-[var(--muted)]">{t("Total Ordered")}</p>
               <p className="mt-1 text-xl font-bold">{formatCurrency(totalOrderedAmount)}</p>
             </Card>
             <Card className="p-3">
-              <p className="text-xs text-[var(--muted)]">Total Paid</p>
+              <p className="text-xs text-[var(--muted)]">{t("Total Paid")}</p>
               <p className="mt-1 text-xl font-bold text-[var(--success)]">{formatCurrency(totalPaid)}</p>
             </Card>
             <Card className="p-3">
-              <p className="text-xs text-[var(--muted)]">Outstanding</p>
+              <p className="text-xs text-[var(--muted)]">{t("Outstanding")}</p>
               <p className={`mt-1 text-xl font-bold ${outstanding > 0 ? "text-[var(--primary)]" : "text-[var(--success)]"}`}>
                 {formatCurrency(outstanding)}
               </p>
@@ -94,8 +96,8 @@ export default async function OrderHistoryPage({
                 <p className="text-sm text-[var(--muted)]">{customer.phone} {customer.city ? `• ${customer.city}` : ""}</p>
               </div>
               <div className="text-right text-sm text-[var(--muted)]">
-                <p>Last order: {lastOrderDate ? lastOrderDate.toLocaleDateString() : "-"}</p>
-                <p>Order count: {totalOrders}</p>
+                <p>{t("Last order: {date}", { date: lastOrderDate ? lastOrderDate.toLocaleDateString() : "-" })}</p>
+                <p>{t("Order count: {count}", { count: totalOrders })}</p>
               </div>
             </div>
           </Card>
@@ -114,8 +116,8 @@ export default async function OrderHistoryPage({
                   <td className="px-4 py-3 font-mono text-xs">{order.orderNumber}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{order.orderDate.toLocaleDateString()}</td>
                   <td className="px-4 py-3 whitespace-nowrap">{order.deliveryDate ? order.deliveryDate.toLocaleDateString() : "—"}</td>
-                  <td className="px-4 py-3">{order.status}</td>
-                  <td className="px-4 py-3">{order.priority}</td>
+                  <td className="px-4 py-3">{t(order.status)}</td>
+                  <td className="px-4 py-3">{t(order.priority)}</td>
                   <td className="px-4 py-3">{order.items.length}</td>
                   <td className="px-4 py-3 font-semibold">{formatCurrency(orderTotal)}</td>
                   <td className="px-4 py-3 text-[var(--success)]">{formatCurrency(paid)}</td>
@@ -129,7 +131,7 @@ export default async function OrderHistoryPage({
         </>
       ) : (
         <Card>
-          <p className="py-8 text-center text-sm text-[var(--muted)]">Select a customer to view order history.</p>
+          <p className="py-8 text-center text-sm text-[var(--muted)]">{t("Select a customer to view order history.")}</p>
         </Card>
       )}
     </div>
