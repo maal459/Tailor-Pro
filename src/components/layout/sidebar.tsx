@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BusinessSettings } from "@/lib/settings";
+import { useT } from "@/lib/i18n/client";
 import { NAV_ITEMS as items } from "@/components/layout/nav-items";
 
 export function Sidebar({
@@ -15,6 +16,7 @@ export function Sidebar({
   isSuperAdmin?: boolean;
 }) {
   const pathname = usePathname();
+  const t = useT();
 
   return (
     <aside className="hidden w-64 flex-col bg-[#1A1D2E] lg:flex min-h-screen print:!hidden">
@@ -64,7 +66,7 @@ export function Sidebar({
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                {item.label}
+                {t(item.label)}
               </Link>
             );
           })}
@@ -82,7 +84,7 @@ export function Sidebar({
               )}
             >
               <ShieldCheck className="h-4 w-4 shrink-0" />
-              Platform Admin
+              {t("Platform Admin")}
             </Link>
           </div>
         )}
