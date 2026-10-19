@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { requireAuth } from "@/lib/auth/guards";
 import { getBusinessSettings } from "@/lib/settings";
+import { getTenant } from "@/lib/tenant";
 import { saveSettingsAction } from "@/app/(dashboard)/settings/actions";
 import { getT } from "@/lib/i18n/server";
 
@@ -13,7 +14,11 @@ export default async function SettingsPage({
 }) {
   const session = await requireAuth();
   const params = await searchParams;
-  const settings = await getBusinessSettings(session.tenantId);
+  const [settings, tenant] = await Promise.all([
+    getBusinessSettings(session.tenantId),
+    getTenant(session.tenantId)
+  ]);
+  const shopPath = tenant ? `/shop/${tenant.slug}` : null;
   const t = await getT();
 
   return (
@@ -151,6 +156,34 @@ export default async function SettingsPage({
               })}
             </div>
           </div>
+        </Card>
+
+        <Card className="space-y-4">
+          <div>
+            <p className="text-base font-semibold">{t("Online shop")}</p>
+            <p className="text-sm text-[var(--muted)]">
+              {t("A public page where customers browse your products and place orders without logging in. New orders appear under Online Orders.")}
+            </p>
+          </div>
+
+          <label className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-sm">
+            <input
+              type="checkbox"
+              name="onlineShopEnabled"
+              defaultChecked={settings.onlineShopEnabled}
+              className="h-4 w-4 rounded border-[var(--border)]"
+            />
+            {t("Accept orders on the public shop page")}
+          </label>
+
+          {shopPath && (
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)] px-4 py-3 text-sm">
+              <span className="text-[var(--muted)]">{t("Shop link:")} </span>
+              <a href={shopPath} target="_blank" rel="noreferrer" className="font-medium text-[var(--primary)] hover:underline">
+                {shopPath}
+              </a>
+            </div>
+          )}
         </Card>
 
         <div className="flex justify-end">

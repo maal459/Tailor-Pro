@@ -79,7 +79,7 @@ registered in the tenant guard):
 | Domain | Models |
 |---|---|
 | People & auth | `User` (globally-unique email; `isSuperAdmin` flag; per-user `permissions` JSON) |
-| Sales | `Customer`, `Order`, `OrderItem`, `Payment`, `PaymentMethod`, `GarmentType` |
+| Sales | `Customer`, `Order`, `OrderItem`, `Payment`, `PaymentMethod`, `GarmentType`, `OnlineOrder`, `OnlineOrderItem` (public shop orders; item name/price snapshotted) |
 | Measurements | `MeasurementProfile`, `Measurement` |
 | Inventory | `ProductCategory`, `Product`, `Supplier`, `Purchase`, `PurchaseItem` |
 | Finance | `ExpenseCategory`, `Expense`, `Employee`, `Salary` |
@@ -88,7 +88,7 @@ registered in the tenant guard):
 Enums: `SubscriptionPlan` (FREE/BASIC/PRO/ENTERPRISE), `TenantStatus`
 (ACTIVE/SUSPENDED/CANCELLED), `BillingCycle` (MONTHLY/YEARLY), `InvoiceStatus`,
 `SubscriptionPaymentMethod` (CASH/ZAAD/EDAHAB/…), `GatewayChargeStatus`, `OrderState`,
-`Priority`, `PaymentMethodCode`, `Gender`.
+`Priority`, `PaymentMethodCode`, `Gender`, `OnlineOrderStatus` (NEW/CONFIRMED/COMPLETED/CANCELLED).
 
 ### 2.2 The fail-closed tenant guard
 
@@ -251,6 +251,16 @@ profit/loss — Today/Week/Month/Year/**All Time**/Custom) · Per-tenant brandin
 brand color, applied across UI and receipts) · Role/permission-based users · Full CRUD
 with guarded deletes; order/purchase *edit* covers workflow fields, not line items (by
 design — item changes go through create/delete to keep balances and stock correct).
+
+**Public online shop** (`/shop/[tenant slug]`, no login): customers browse the tenant's
+products (name, price, image, availability only — never cost or exact stock), search and
+filter by category, keep a cart in the browser, and place an order with their name and
+phone. The server re-reads prices from the DB, rejects quantities above stock, rate-limits
+by IP and has a bot honeypot. Orders land in **Online Orders** (`/online-orders`,
+`orders.manage`), where staff confirm/complete/cancel them, link them to an existing
+customer by phone (or create one), and delete them; new orders also appear in
+notifications. Settings → *Online shop* turns ordering off and shows the shop link.
+Online orders do not change stock automatically.
 
 ---
 

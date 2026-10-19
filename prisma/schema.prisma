@@ -30,6 +30,14 @@ enum OrderState {
   CANCELLED
 }
 
+/// Lifecycle of an order placed by a customer on the public shop page.
+enum OnlineOrderStatus {
+  NEW
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
 enum PaymentMethodCode {
   CASH
   CARD
@@ -125,6 +133,8 @@ model Tenant {
   subscriptionInvoices SubscriptionInvoice[]
   subscriptionPayments SubscriptionPayment[]
   gatewayCharges       GatewayCharge[]
+  onlineOrders         OnlineOrder[]
+  onlineOrderItems     OnlineOrderItem[]
 
   @@index([status])
 }
@@ -264,6 +274,7 @@ model Customer {
   measurementProfiles MeasurementProfile[]
   orders              Order[]
   payments            Payment[]
+  onlineOrders        OnlineOrder[]
 
   @@index([tenantId, phone])
   @@index([tenantId, fullName])
@@ -547,6 +558,7 @@ model Product {
   category      ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   supplier      Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   purchaseItems PurchaseItem[]
+  onlineOrderItems OnlineOrderItem[]
 
   @@index([tenantId, name])
   @@index([tenantId, quantity])
@@ -601,4 +613,51 @@ model Setting {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@unique([tenantId, key])
+}
+
+/// An order a customer placed on the tenant's public shop page (/shop/[slug]) without
+/// logging in. Contact details are captured as typed; staff can later link the order
+/// to a Customer record from the admin "Online Orders" page.
+model OnlineOrder {
+  id            String            @id @default(cuid())
+  tenantId      String            @db.VarChar(36)
+  orderNumber   String            @unique @db.VarChar(40)
+  customerId    String?
+  customerName  String            @db.VarChar(150)
+  phone         String            @db.VarChar(30)
+  email         String?           @db.VarChar(190)
+  address       String?           @db.VarChar(255)
+  notes         String?           @db.Text
+  status        OnlineOrderStatus @default(NEW)
+  total         Decimal           @db.Decimal(12, 2)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  customer Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items    OnlineOrderItem[]
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status])
+  @@index([tenantId, phone])
+}
+
+/// A line of an OnlineOrder. Name and price are snapshotted at order time so later
+/// product edits (or deletion) never change what the customer ordered.
+model OnlineOrderItem {
+  id            String   @id @default(cuid())
+  tenantId      String   @db.VarChar(36)
+  onlineOrderId String
+  productId     String?
+  productName   String   @db.VarChar(150)
+  unitPrice     Decimal  @db.Decimal(12, 2)
+  quantity      Int
+  subtotal      Decimal  @db.Decimal(12, 2)
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  onlineOrder OnlineOrder @relation(fields: [onlineOrderId], references: [id], onDelete: Cascade)
+  product     Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, onlineOrderId])
+  @@index([productId])
 }
