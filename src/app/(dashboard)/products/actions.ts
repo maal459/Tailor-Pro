@@ -16,6 +16,7 @@ import { productRepository } from "@/lib/repositories/product-repository";
 import { prisma } from "@/lib/db/prisma";
 import { logActivity } from "@/lib/activity-log";
 import { assertWithinPlanLimit } from "@/lib/billing/limits";
+import { getT } from "@/lib/i18n/server";
 
 function revalidateProductViews() {
   revalidatePath("/products");
@@ -64,7 +65,7 @@ export async function createProductAction(formData: FormData) {
 
   const parsed = createProductSchema.safeParse(parseProductForm(formData));
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid product data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid product data"));
   }
 
   // Enforce the tenant's subscription plan cap on products.
@@ -97,7 +98,7 @@ export async function createProductAction(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw new Error("A product with this SKU already exists");
+      throw new Error((await getT())("A product with this SKU already exists"));
     }
     throw error;
   }
@@ -110,12 +111,12 @@ export async function updateProductAction(productId: string, formData: FormData)
 
   const parsed = updateProductSchema.safeParse(parseProductForm(formData));
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid product data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid product data"));
   }
 
   const existing = await productRepository.byId(session.tenantId, productId);
   if (!existing) {
-    throw new Error("Product not found");
+    throw new Error((await getT())("Product not found"));
   }
 
   const uploadedImage = await saveProductImage(formData.get("image"), session.tenantId);
@@ -137,7 +138,7 @@ export async function updateProductAction(productId: string, formData: FormData)
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw new Error("A product with this SKU already exists");
+      throw new Error((await getT())("A product with this SKU already exists"));
     }
     throw error;
   }
@@ -160,12 +161,12 @@ export async function deleteProductAction(productId: string) {
 
   const existing = await productRepository.byId(session.tenantId, productId);
   if (!existing) {
-    throw new Error("Product not found");
+    throw new Error((await getT())("Product not found"));
   }
 
   const purchaseItemCount = await prisma.purchaseItem.count({ where: { productId } });
   if (purchaseItemCount > 0) {
-    throw new Error("Product has purchase history and cannot be deleted.");
+    throw new Error((await getT())("Product has purchase history and cannot be deleted."));
   }
 
   await productRepository.remove(session.tenantId, productId);
@@ -191,7 +192,7 @@ export async function createProductCategoryAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid category data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid category data"));
   }
 
   const category = await productRepository.createCategory({
@@ -218,10 +219,10 @@ export async function deleteProductCategoryAction(categoryId: string) {
   const categories = await productRepository.listCategories(session.tenantId);
   const existing = categories.find((category) => category.id === categoryId);
   if (!existing) {
-    throw new Error("Category not found");
+    throw new Error((await getT())("Category not found"));
   }
   if (existing._count.products > 0) {
-    throw new Error("Category has products and cannot be deleted.");
+    throw new Error((await getT())("Category has products and cannot be deleted."));
   }
 
   await productRepository.removeCategory(session.tenantId, categoryId);

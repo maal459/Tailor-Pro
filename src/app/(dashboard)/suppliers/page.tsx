@@ -7,6 +7,7 @@ import { ActionButton } from "@/components/ui/action-button";
 import { requirePermission } from "@/lib/auth/guards";
 import { supplierRepository } from "@/lib/repositories/supplier-repository";
 import { formatCurrency } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 import { createSupplierAction, deleteSupplierAction } from "@/app/(dashboard)/suppliers/actions";
 
 const PAGE_SIZE = 10;
@@ -17,6 +18,7 @@ export default async function SuppliersPage({
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const session = await requirePermission("suppliers.manage");
+  const t = await getT();
   const params = await searchParams;
   const q = params.q?.trim();
   const page = Math.max(1, Number(params.page ?? "1") || 1);
@@ -32,28 +34,28 @@ export default async function SuppliersPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold">Suppliers</h1>
-          <p className="text-sm text-[var(--muted)]">Manage fabric and material suppliers</p>
+          <h1 className="text-2xl font-semibold">{t("Suppliers")}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Manage fabric and material suppliers")}</p>
         </div>
         <Link
           href="/purchases"
           className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
         >
-          Purchases
+          {t("Purchases")}
         </Link>
       </div>
 
       {/* Add supplier */}
       <Card>
-        <p className="mb-4 text-sm font-semibold">Add Supplier</p>
+        <p className="mb-4 text-sm font-semibold">{t("Add Supplier")}</p>
         <form className="grid gap-3 md:grid-cols-3" action={createSupplierAction}>
-          <Input name="supplierName" placeholder="Supplier name *" required />
-          <Input name="phone" placeholder="Phone" />
-          <Input name="email" type="email" placeholder="Email" />
-          <Input name="address" placeholder="Address" />
-          <Input name="notes" placeholder="Notes" className="md:col-span-2" />
+          <Input name="supplierName" placeholder={t("Supplier name *")} required />
+          <Input name="phone" placeholder={t("Phone")} />
+          <Input name="email" type="email" placeholder={t("Email")} />
+          <Input name="address" placeholder={t("Address")} />
+          <Input name="notes" placeholder={t("Notes")} className="md:col-span-2" />
           <Button type="submit" className="md:w-fit">
-            Add Supplier
+            {t("Add Supplier")}
           </Button>
         </form>
       </Card>
@@ -61,9 +63,9 @@ export default async function SuppliersPage({
       {/* Search and list */}
       <Card>
         <form className="mb-4 flex gap-2" method="get">
-          <Input name="q" placeholder="Search name, phone, or email" defaultValue={q} />
+          <Input name="q" placeholder={t("Search name, phone, or email")} defaultValue={q} />
           <Button variant="secondary" type="submit">
-            Search
+            {t("Search")}
           </Button>
         </form>
 
@@ -87,19 +89,19 @@ export default async function SuppliersPage({
                         href={`/suppliers/${supplier.id}`}
                         className="rounded-lg bg-[var(--primary)]/10 px-2 py-1 text-xs font-medium text-[var(--primary)] hover:bg-[var(--primary)]/20"
                       >
-                        History
+                        {t("History")}
                       </Link>
                       <Link
                         href={`/suppliers/${supplier.id}/edit`}
                         className="rounded-lg bg-[var(--violet)]/10 px-2 py-1 text-xs font-medium text-[var(--violet)] hover:bg-[var(--violet)]/20"
                       >
-                        Edit
+                        {t("Edit")}
                       </Link>
                       <ActionButton
-                        label="Delete"
-                        confirmText={`Delete supplier "${supplier.supplierName}"?`}
+                        label={t("Delete")}
+                        confirmText={t("Delete supplier \"{name}\"?", { name: supplier.supplierName })}
                         action={deleteSupplierAction.bind(null, supplier.id)}
-                        successMessage="Supplier deleted"
+                        successMessage={t("Supplier deleted")}
                         className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20"
                       />
                     </div>
@@ -111,20 +113,21 @@ export default async function SuppliersPage({
 
         <div className="mt-4 flex items-center justify-between text-sm">
           <p>
-            Page {page} of {pageCount} · {total} supplier{total !== 1 ? "s" : ""}
+            {t("Page {page} of {pages}", { page, pages: pageCount })} ·{" "}
+            {t(total === 1 ? "{count} supplier" : "{count} suppliers", { count: total })}
           </p>
           <div className="flex gap-2">
             <a
               className="rounded-lg border px-3 py-1"
               href={`/suppliers?page=${Math.max(1, page - 1)}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
             >
-              Prev
+              {t("Prev")}
             </a>
             <a
               className="rounded-lg border px-3 py-1"
               href={`/suppliers?page=${Math.min(pageCount, page + 1)}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
             >
-              Next
+              {t("Next")}
             </a>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { createSupplierSchema, updateSupplierSchema } from "@/lib/validators/sup
 import { supplierRepository } from "@/lib/repositories/supplier-repository";
 import { prisma } from "@/lib/db/prisma";
 import { logActivity } from "@/lib/activity-log";
+import { getT } from "@/lib/i18n/server";
 
 export async function createSupplierAction(formData: FormData) {
   const session = await requirePermission("suppliers.manage");
@@ -20,7 +21,7 @@ export async function createSupplierAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid supplier data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid supplier data"));
   }
 
   const supplier = await supplierRepository.create({
@@ -56,12 +57,12 @@ export async function updateSupplierAction(supplierId: string, formData: FormDat
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid supplier data");
+    throw new Error(parsed.error.issues[0]?.message ?? (await getT())("Invalid supplier data"));
   }
 
   const existing = await supplierRepository.byId(session.tenantId, supplierId);
   if (!existing) {
-    throw new Error("Supplier not found");
+    throw new Error((await getT())("Supplier not found"));
   }
 
   await supplierRepository.update(session.tenantId, supplierId, {
@@ -91,14 +92,14 @@ export async function deleteSupplierAction(supplierId: string) {
 
   const existing = await supplierRepository.byId(session.tenantId, supplierId);
   if (!existing) {
-    throw new Error("Supplier not found");
+    throw new Error((await getT())("Supplier not found"));
   }
 
   const purchaseCount = await prisma.purchase.count({
     where: { tenantId: session.tenantId, supplierId }
   });
   if (purchaseCount > 0) {
-    throw new Error("Supplier has purchase records and cannot be deleted.");
+    throw new Error((await getT())("Supplier has purchase records and cannot be deleted."));
   }
 
   await supplierRepository.remove(session.tenantId, supplierId);

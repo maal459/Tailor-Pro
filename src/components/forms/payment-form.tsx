@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AsyncCombobox } from "@/components/ui/async-combobox";
 import { useToast } from "@/components/ui/toaster";
+import { useT } from "@/lib/i18n/client";
 
 type Option = { id: string; label: string };
 
@@ -20,6 +21,7 @@ export function PaymentForm({
   const [isPending, startTransition]    = useTransition();
   const [message, setMessage]           = useState<string | null>(null);
   const toast                           = useToast();
+  const t                               = useT();
   const [orderId, setOrderId]           = useState("");
   const [customerId, setCustomerId]     = useState("");
   const [methodId, setMethodId]         = useState("");
@@ -39,11 +41,11 @@ export function PaymentForm({
           referenceNo: String(form.get("referenceNo") ?? ""),
           notes:       String(form.get("notes")       ?? "")
         });
-        toast.push("Payment recorded — redirecting to receipt…");
+        toast.push(t("Payment recorded — redirecting to receipt…"));
         // redirect to the receipt for this order
         router.push(`/receipts?orderId=${orderId}`);
       } catch (error) {
-        const text = error instanceof Error ? error.message : "Failed to record payment";
+        const text = error instanceof Error ? error.message : t("Failed to record payment");
         setMessage(text);
         toast.push(text, "error");
       }
@@ -56,7 +58,7 @@ export function PaymentForm({
         endpoint="/api/search/orders"
         value={orderId}
         onSelect={(r) => { setOrderId(r?.id ?? ""); setCustomerId((r?.customerId as string) ?? ""); }}
-        placeholder="Search order by phone, name, or number…"
+        placeholder={t("Search order by phone, name, or number…")}
         className="md:col-span-2"
       />
 
@@ -64,15 +66,15 @@ export function PaymentForm({
         value={methodId}
         onChange={setMethodId}
         options={paymentMethods}
-        placeholder="Payment method…"
+        placeholder={t("Payment method…")}
       />
 
-      <Input name="amount" type="number" min={0} step="0.01" placeholder="Amount ($)" required />
-      <Input name="referenceNo" placeholder="Reference number" />
-      <Input className="md:col-span-2" name="notes" placeholder="Notes" />
+      <Input name="amount" type="number" min={0} step="0.01" placeholder={t("Amount ($)")} required />
+      <Input name="referenceNo" placeholder={t("Reference number")} />
+      <Input className="md:col-span-2" name="notes" placeholder={t("Notes")} />
 
       <Button disabled={isPending} type="submit">
-        {isPending ? "Saving…" : "Record Payment"}
+        {isPending ? t("Saving…") : t("Record Payment")}
       </Button>
 
       {message && <p className="text-sm text-red-600 md:col-span-4">{message}</p>}

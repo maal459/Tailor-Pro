@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth/guards";
+import { getT } from "@/lib/i18n/server";
 import { prismaUnsafe } from "@/lib/db/prisma";
 import { payInvoiceSchema } from "@/lib/validators/billing";
 import { initiateCharge, type InitiateResult } from "@/lib/billing/charges";
@@ -14,10 +15,11 @@ import { initiateCharge, type InitiateResult } from "@/lib/billing/charges";
  */
 export async function payInvoiceAction(input: unknown): Promise<InitiateResult> {
   const session = await requireAuth();
+  const t = await getT();
 
   const parsed = payInvoiceSchema.safeParse(input);
   if (!parsed.success) {
-    return { status: "FAILED", message: parsed.error.issues[0]?.message ?? "Invalid payment details" };
+    return { status: "FAILED", message: parsed.error.issues[0]?.message ?? t("Invalid payment details") };
   }
 
   const invoice = await prismaUnsafe.subscriptionInvoice.findUnique({
@@ -25,7 +27,7 @@ export async function payInvoiceAction(input: unknown): Promise<InitiateResult> 
     select: { tenantId: true }
   });
   if (!invoice || invoice.tenantId !== session.tenantId) {
-    return { status: "FAILED", message: "Invoice not found." };
+    return { status: "FAILED", message: t("Invoice not found.") };
   }
 
   const result = await initiateCharge({

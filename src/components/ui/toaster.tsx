@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 type Toast = { id: string; message: string; type: "success" | "error" };
 
@@ -10,6 +11,7 @@ const ToastContext = createContext<{
 
 export function ToasterProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const t = useT();
 
   const api = useMemo(
     () => ({
@@ -35,7 +37,7 @@ export function ToasterProvider({ children }: { children: React.ReactNode }) {
               toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
             }`}
           >
-            {toast.message}
+            {t(toast.message)}
           </div>
         ))}
       </div>

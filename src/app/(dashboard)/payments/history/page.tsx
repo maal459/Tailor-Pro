@@ -6,6 +6,7 @@ import { CustomerHistorySelector } from "@/components/forms/customer-history-sel
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { formatCurrency, toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export default async function PaymentHistoryPage({
   searchParams
@@ -13,6 +14,7 @@ export default async function PaymentHistoryPage({
   searchParams: Promise<{ customerId?: string }>;
 }) {
   const session = await requireAuth();
+  const t       = await getT();
   const params  = await searchParams;
 
   const selectedId = params.customerId ?? "";
@@ -52,10 +54,10 @@ export default async function PaymentHistoryPage({
       {/* page title + print */}
       <div className="flex flex-wrap items-start justify-between gap-2 print:hidden">
         <div>
-          <h1 className="text-2xl font-semibold">Payment History</h1>
-          <p className="text-sm text-[var(--muted)]">Full payment record per customer — printable</p>
+          <h1 className="text-2xl font-semibold">{t("Payment History")}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Full payment record per customer — printable")}</p>
         </div>
-        {selectedId && <PrintButton label="Print History" />}
+        {selectedId && <PrintButton label={t("Print History")} />}
       </div>
 
       {/* customer selector (server-backed, phone-first) */}
@@ -81,7 +83,7 @@ export default async function PaymentHistoryPage({
               </div>
               <div className="text-right text-sm">
                 <p>
-                  Printed: <strong>{new Date().toLocaleDateString()}</strong>
+                  {t("Printed:")} <strong>{new Date().toLocaleDateString()}</strong>
                 </p>
               </div>
             </div>
@@ -89,15 +91,15 @@ export default async function PaymentHistoryPage({
             {/* summary cards */}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-[var(--border)] p-3">
-                <p className="text-xs text-[var(--muted)]">Total Ordered</p>
+                <p className="text-xs text-[var(--muted)]">{t("Total Ordered")}</p>
                 <p className="mt-1 text-lg font-semibold">{formatCurrency(totalOrdered)}</p>
               </div>
               <div className="rounded-xl border border-[var(--border)] p-3">
-                <p className="text-xs text-[var(--muted)]">Total Paid</p>
+                <p className="text-xs text-[var(--muted)]">{t("Total Paid")}</p>
                 <p className="mt-1 text-lg font-semibold text-[var(--success)]">{formatCurrency(totalPaid)}</p>
               </div>
               <div className="rounded-xl border border-[var(--border)] p-3">
-                <p className="text-xs text-[var(--muted)]">Outstanding Balance</p>
+                <p className="text-xs text-[var(--muted)]">{t("Outstanding Balance")}</p>
                 <p className={`mt-1 text-lg font-semibold ${balance > 0 ? "text-[var(--primary)]" : "text-[var(--success)]"}`}>
                   {formatCurrency(balance)}
                 </p>
@@ -128,7 +130,7 @@ export default async function PaymentHistoryPage({
           ) : (
             <Card>
               <p className="py-6 text-center text-sm text-[var(--muted)]">
-                No payments recorded for this customer.
+                {t("No payments recorded for this customer.")}
               </p>
             </Card>
           )}
@@ -138,7 +140,7 @@ export default async function PaymentHistoryPage({
       {!customer && selectedId === "" && (
         <Card>
           <p className="py-8 text-center text-sm text-[var(--muted)]">
-            Select a customer above to view their full payment history.
+            {t("Select a customer above to view their full payment history.")}
           </p>
         </Card>
       )}
@@ -147,7 +149,7 @@ export default async function PaymentHistoryPage({
         href="/payments"
         className="print:hidden inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
       >
-        ← Back to Payments
+        ← {t("Back to Payments")}
       </Link>
     </div>
   );

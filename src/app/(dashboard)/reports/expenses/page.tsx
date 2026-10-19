@@ -7,6 +7,7 @@ import { ReportFilterBar } from "@/components/reports/report-filter-bar";
 import { requirePermission } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { getReportRange, parseReportPeriod } from "@/lib/report-range";
+import { getT } from "@/lib/i18n/server";
 import { formatCurrency, toNumber } from "@/lib/utils";
 
 export default async function ExpenseReportPage({
@@ -15,6 +16,7 @@ export default async function ExpenseReportPage({
   searchParams: Promise<{ period?: string; from?: string; to?: string }>;
 }) {
   const session = await requirePermission("reports.view");
+  const t = await getT();
   const params = await searchParams;
   const period = parseReportPeriod(params.period);
   const { from, to } = getReportRange(period, params.from, params.to);
@@ -39,22 +41,22 @@ export default async function ExpenseReportPage({
 
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
   const byCategory = grouped
-    .map((g) => [g.categoryId ? categoryName.get(g.categoryId) ?? "Uncategorized" : "Uncategorized", toNumber(g._sum.amount ?? 0)] as [string, number])
+    .map((g) => [g.categoryId ? categoryName.get(g.categoryId) ?? t("Uncategorized") : t("Uncategorized"), toNumber(g._sum.amount ?? 0)] as [string, number])
     .sort((a, b) => b[1] - a[1]);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Expense Report</h1>
-          <p className="text-sm text-[var(--muted)]">Spending overview by period and category</p>
+          <h1 className="text-2xl font-semibold">{t("Expense Report")}</h1>
+          <p className="text-sm text-[var(--muted)]">{t("Spending overview by period and category")}</p>
         </div>
         <div className="flex flex-wrap gap-2 print:hidden">
           <Link
             href="/reports"
             className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5"
           >
-            ← Reports
+            ← {t("Reports")}
           </Link>
           <PrintButton label="PDF" />
         </div>
@@ -63,25 +65,25 @@ export default async function ExpenseReportPage({
       <ReportFilterBar basePath="/reports/expenses" period={period} from={from} to={to} />
 
       <p className="text-sm text-[var(--muted)]">
-        {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")} · {entryCount} expense
-        {entryCount !== 1 ? "s" : ""}
+        {format(from, "dd MMM yyyy")} – {format(to, "dd MMM yyyy")} ·{" "}
+        {t(entryCount !== 1 ? "{count} expenses" : "{count} expense", { count: entryCount })}
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <p className="text-sm text-[var(--muted)]">Total Expenses</p>
+          <p className="text-sm text-[var(--muted)]">{t("Total Expenses")}</p>
           <p className="mt-2 text-2xl font-semibold text-red-600">{formatCurrency(totalAmount)}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Entries</p>
+          <p className="text-sm text-[var(--muted)]">{t("Entries")}</p>
           <p className="mt-2 text-2xl font-semibold">{entryCount}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Categories Used</p>
+          <p className="text-sm text-[var(--muted)]">{t("Categories Used")}</p>
           <p className="mt-2 text-2xl font-semibold">{byCategory.length}</p>
         </Card>
         <Card>
-          <p className="text-sm text-[var(--muted)]">Avg per Entry</p>
+          <p className="text-sm text-[var(--muted)]">{t("Avg per Entry")}</p>
           <p className="mt-2 text-2xl font-semibold">
             {formatCurrency(entryCount ? totalAmount / entryCount : 0)}
           </p>
@@ -90,7 +92,7 @@ export default async function ExpenseReportPage({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-3 text-lg font-semibold">By Category</h2>
+          <h2 className="mb-3 text-lg font-semibold">{t("By Category")}</h2>
           <div className="space-y-2">
             {byCategory.map(([name, amount]) => (
               <div key={name} className="flex items-center justify-between rounded-xl border px-3 py-2">
@@ -99,15 +101,15 @@ export default async function ExpenseReportPage({
               </div>
             ))}
             {!byCategory.length && (
-              <p className="text-sm text-[var(--muted)]">No expenses in this period.</p>
+              <p className="text-sm text-[var(--muted)]">{t("No expenses in this period.")}</p>
             )}
           </div>
         </Card>
 
         <Card>
-          <h2 className="mb-3 text-lg font-semibold">All Categories</h2>
+          <h2 className="mb-3 text-lg font-semibold">{t("All Categories")}</h2>
           <p className="mb-3 text-sm text-[var(--muted)]">
-            {categories.length} categor{categories.length !== 1 ? "ies" : "y"} defined
+            {t(categories.length !== 1 ? "{count} categories defined" : "{count} category defined", { count: categories.length })}
           </p>
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
@@ -123,9 +125,9 @@ export default async function ExpenseReportPage({
       </div>
 
       <Card>
-        <h2 className="mb-1 text-lg font-semibold">Expense Details</h2>
+        <h2 className="mb-1 text-lg font-semibold">{t("Expense Details")}</h2>
         <p className="mb-4 text-xs text-[var(--muted)]">
-          Showing the 20 most recent — totals above cover the whole period.
+          {t("Showing the 20 most recent — totals above cover the whole period.")}
         </p>
         <DataTable
           headers={["Date", "Title", "Category", "Method", "Amount"]}

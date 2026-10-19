@@ -3,6 +3,7 @@ import { ArrowLeft, Receipt } from "lucide-react";
 import { requireAuth } from "@/lib/auth/guards";
 import { LogoutButton } from "@/components/layout/logout-button";
 import { prismaUnsafe } from "@/lib/db/prisma";
+import { getT } from "@/lib/i18n/server";
 
 /**
  * The tenant billing portal lives OUTSIDE the (dashboard) group on purpose: a tenant
@@ -12,6 +13,7 @@ import { prismaUnsafe } from "@/lib/db/prisma";
  */
 export default async function BillingLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAuth();
+  const t = await getT();
   const tenant = await prismaUnsafe.tenant.findUnique({
     where: { id: session.tenantId },
     select: { businessName: true, status: true }
@@ -25,7 +27,7 @@ export default async function BillingLayout({ children }: { children: React.Reac
             <Receipt className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-sm font-semibold">Subscription &amp; Billing</p>
+            <p className="text-sm font-semibold">{t("Subscription & Billing")}</p>
             <p className="text-xs text-[var(--muted)]">{tenant?.businessName}</p>
           </div>
         </div>
@@ -35,7 +37,7 @@ export default async function BillingLayout({ children }: { children: React.Reac
               href="/dashboard"
               className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] px-3 py-2 text-sm hover:bg-black/5"
             >
-              <ArrowLeft className="h-4 w-4" /> Dashboard
+              <ArrowLeft className="h-4 w-4" /> {t("Dashboard")}
             </Link>
           )}
           <LogoutButton />

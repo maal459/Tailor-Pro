@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { PrintButton } from "@/components/ui/print-button";
 import { requireAuth } from "@/lib/auth/guards";
 import { prismaUnsafe } from "@/lib/db/prisma";
+import { getT } from "@/lib/i18n/server";
 import { getPlanDefinition } from "@/lib/billing/plans";
 import {
   PLATFORM_NAME,
@@ -31,6 +32,7 @@ export default async function SubscriptionReceiptPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await requireAuth();
+  const t = await getT();
   const { id } = await params;
 
   const payment = await prismaUnsafe.subscriptionPayment.findUnique({
@@ -51,9 +53,9 @@ export default async function SubscriptionReceiptPage({
           href="/billing"
           className="inline-flex items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm hover:bg-black/5"
         >
-          <ArrowLeft className="h-4 w-4" /> Billing
+          <ArrowLeft className="h-4 w-4" /> {t("Billing")}
         </Link>
-        <PrintButton label="Print / Save PDF" />
+        <PrintButton label={t("Print / Save PDF")} />
       </div>
 
       <div
@@ -69,7 +71,7 @@ export default async function SubscriptionReceiptPage({
           </div>
           <div className="text-right">
             <p className="flex items-center justify-end gap-1 text-lg font-bold uppercase tracking-wide text-green-700">
-              <CheckCircle2 className="h-5 w-5" /> Receipt
+              <CheckCircle2 className="h-5 w-5" /> {t("Receipt")}
             </p>
             <p className="font-mono text-sm">{receiptNumber(payment.id)}</p>
           </div>
@@ -77,7 +79,7 @@ export default async function SubscriptionReceiptPage({
 
         {/* Paid amount */}
         <div className="mt-6 rounded-xl bg-green-50 p-5 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-green-700">Amount paid</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-green-700">{t("Amount paid")}</p>
           <p className="mt-1 text-3xl font-bold text-green-800">
             {formatCurrency(toNumber(payment.amount), payment.currency)}
           </p>
@@ -87,15 +89,15 @@ export default async function SubscriptionReceiptPage({
         {/* Details */}
         <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Received from</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t("Received from")}</p>
             <p className="mt-1 font-bold">{payment.tenant.businessName}</p>
             {payment.tenant.email && <p className="text-gray-700">{payment.tenant.email}</p>}
           </div>
           <div className="text-right">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Payment method</p>
-            <p className="mt-1">{METHOD_LABEL[payment.method] ?? payment.method}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">{t("Payment method")}</p>
+            <p className="mt-1">{t(METHOD_LABEL[payment.method] ?? payment.method)}</p>
             {payment.gatewayRef && (
-              <p className="font-mono text-xs text-gray-500">Ref: {payment.gatewayRef}</p>
+              <p className="font-mono text-xs text-gray-500">{t("Ref: {ref}", { ref: payment.gatewayRef })}</p>
             )}
           </div>
         </div>
@@ -104,21 +106,23 @@ export default async function SubscriptionReceiptPage({
         <table className="mt-6 w-full text-sm">
           <thead>
             <tr className="border-b border-gray-300 text-left text-xs uppercase tracking-wider text-gray-500">
-              <th className="pb-2 font-medium">For</th>
-              <th className="pb-2 text-right font-medium">Amount</th>
+              <th className="pb-2 font-medium">{t("For")}</th>
+              <th className="pb-2 text-right font-medium">{t("Amount")}</th>
             </tr>
           </thead>
           <tbody>
             <tr className="border-b border-gray-100">
               <td className="py-3">
                 <p className="font-medium">
-                  {def ? `${def.label} plan subscription` : "Subscription payment"}
+                  {def ? t("{plan} plan subscription", { plan: t(def.label) }) : t("Subscription payment")}
                 </p>
                 {payment.invoice && (
                   <p className="text-xs text-gray-500">
-                    Invoice {invoiceNumber(payment.invoice.id)} · period{" "}
-                    {format(payment.invoice.periodStart, "dd MMM")} –{" "}
-                    {format(payment.invoice.periodEnd, "dd MMM yyyy")}
+                    {t("Invoice {number} · period {start} – {end}", {
+                      number: invoiceNumber(payment.invoice.id),
+                      start: format(payment.invoice.periodStart, "dd MMM"),
+                      end: format(payment.invoice.periodEnd, "dd MMM yyyy")
+                    })}
                   </p>
                 )}
               </td>
@@ -128,10 +132,10 @@ export default async function SubscriptionReceiptPage({
         </table>
 
         <p className="mt-8 text-center text-sm font-medium text-gray-600">
-          Thank you for your payment.
+          {t("Thank you for your payment.")}
         </p>
         <p className="mt-2 border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
-          {PLATFORM_NAME} · Generated {new Date().toLocaleString()}
+          {PLATFORM_NAME} · {t("Generated {date}", { date: new Date().toLocaleString() })}
         </p>
       </div>
     </div>

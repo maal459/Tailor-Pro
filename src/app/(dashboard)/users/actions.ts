@@ -7,6 +7,7 @@ import { createUserSchema, updateUserSchema } from "@/lib/validators/user";
 import { prisma } from "@/lib/db/prisma";
 import { getPermissionsForRole } from "@/lib/auth/permissions";
 import { assertWithinPlanLimit } from "@/lib/billing/limits";
+import { getT } from "@/lib/i18n/server";
 
 function formDataToPermissions(formData: FormData) {
   return formData
@@ -28,7 +29,8 @@ export async function createUserAction(formData: FormData) {
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid user data");
+    const t = await getT();
+    throw new Error(t(parsed.error.issues[0]?.message ?? "Invalid user data"));
   }
 
   // Enforce the tenant's subscription plan cap on staff users.
@@ -65,12 +67,13 @@ export async function updateUserAction(userId: string, formData: FormData) {
   });
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid user data");
+    const t = await getT();
+    throw new Error(t(parsed.error.issues[0]?.message ?? "Invalid user data"));
   }
 
   const existing = await prisma.user.findFirst({ where: { id: userId, tenantId: session.tenantId } });
   if (!existing) {
-    throw new Error("User not found");
+    throw new Error((await getT())("User not found"));
   }
 
   const permissions = parsed.data.permissions.length ? parsed.data.permissions : getPermissionsForRole(parsed.data.role);
@@ -96,15 +99,15 @@ export async function deleteUserAction(userId: string) {
   const session = await requirePermission("users.manage");
 
   if (userId === session.userId) {
-    throw new Error("You cannot delete your own account.");
+    throw new Error((await getT())("You cannot delete your own account."));
   }
 
   const existing = await prisma.user.findFirst({ where: { id: userId, tenantId: session.tenantId } });
   if (!existing) {
-    throw new Error("User not found");
+    throw new Error((await getT())("User not found"));
   }
   if (existing.isSuperAdmin) {
-    throw new Error("A platform super-admin cannot be deleted here.");
+    throw new Error((await getT())("A platform super-admin cannot be deleted here."));
   }
 
   await prisma.user.deleteMany({ where: { id: userId, tenantId: session.tenantId } });
