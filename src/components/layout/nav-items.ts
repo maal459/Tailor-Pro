@@ -1,7 +1,7 @@
 import {
   Home, Users, Ruler, Scissors, Wallet, BarChart3,
   BookOpen, ReceiptText, Bell, Search, History, Settings2,
-  DollarSign, UsersRound, Truck, Boxes, ShoppingCart, CreditCard, HandCoins
+  DollarSign, UsersRound, Truck, Boxes, ShoppingCart, CreditCard, HandCoins, Store
 } from "lucide-react";
 
 /** Shared dashboard navigation, used by both the desktop sidebar and the mobile drawer. */
@@ -11,6 +11,7 @@ export const NAV_ITEMS = [
   { href: "/measurements",  label: "Measurements", icon: Ruler },
   { href: "/orders",        label: "Orders",       icon: Scissors },
   { href: "/orders/history",label: "Order History", icon: History },
+  { href: "/online-orders", label: "Online Orders", icon: Store },
   { href: "/payments",      label: "Payments",     icon: Wallet },
   { href: "/receivables",   label: "Receivables",  icon: HandCoins },
   { href: "/users",         label: "Users",        icon: Users },

@@ -40,7 +40,9 @@ const TENANT_SCOPED_MODELS = new Set<string>([
   "Product",
   "Purchase",
   "PurchaseItem",
-  "Setting"
+  "Setting",
+  "OnlineOrder",
+  "OnlineOrderItem"
 ]);
 
 // Operations whose `where` must include a tenant filter.

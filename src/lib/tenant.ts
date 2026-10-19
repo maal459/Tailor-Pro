@@ -7,6 +7,11 @@ export async function getTenant(tenantId: string) {
   return prismaUnsafe.tenant.findUnique({ where: { id: tenantId } });
 }
 
+/** Platform-level lookup of a tenant by its public slug (used by the public shop page). */
+export async function getTenantBySlug(slug: string) {
+  return prismaUnsafe.tenant.findUnique({ where: { slug } });
+}
+
 /** A tenant may use the app only while ACTIVE (not SUSPENDED / CANCELLED). */
 export async function isTenantActive(tenantId: string): Promise<boolean> {
   const tenant = await getTenant(tenantId);

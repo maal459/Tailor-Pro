@@ -76,7 +76,8 @@ export async function saveSettingsAction(formData: FormData) {
     logoDataUrl: formData.get("removeLogo") === "on" ? "" : uploadedLogo ?? current.logoDataUrl,
     multiCurrencyEnabled: readBoolean(formData, "multiCurrencyEnabled"),
     exchangeRate: readNumber(formData, "exchangeRate", current.exchangeRate),
-    localCurrencyCode: readText(formData, "localCurrencyCode", current.localCurrencyCode)
+    localCurrencyCode: readText(formData, "localCurrencyCode", current.localCurrencyCode),
+    onlineShopEnabled: readBoolean(formData, "onlineShopEnabled")
   });
 
   revalidatePath("/settings");

@@ -6,7 +6,7 @@ export type NotificationItem = {
   id: string;
   title: string;
   description: string;
-  type: "dueToday" | "lateOrder" | "outstanding" | "recentPayment";
+  type: "dueToday" | "lateOrder" | "outstanding" | "recentPayment" | "onlineOrder";
   createdAt: Date;
   href: string;
 };
@@ -15,7 +15,7 @@ export async function buildNotificationItems(tenantId: string, seenAt?: Date | n
   const now = new Date();
   const threshold = seenAt ?? subDays(now, 7);
 
-  const [dueToday, lateOrders, outstandingOrders, recentPayments] = await Promise.all([
+  const [dueToday, lateOrders, outstandingOrders, recentPayments, newOnlineOrders] = await Promise.all([
     prisma.order.findMany({
       where: {
         tenantId,
@@ -46,6 +46,11 @@ export async function buildNotificationItems(tenantId: string, seenAt?: Date | n
       where: { tenantId, paymentDate: { gte: threshold } },
       include: { customer: true, order: true },
       orderBy: { paymentDate: "desc" },
+      take: 10
+    }),
+    prisma.onlineOrder.findMany({
+      where: { tenantId, status: "NEW" },
+      orderBy: { createdAt: "desc" },
       take: 10
     })
   ]);
@@ -99,6 +104,17 @@ export async function buildNotificationItems(tenantId: string, seenAt?: Date | n
       type: "recentPayment",
       createdAt: payment.paymentDate,
       href: "/payments/history"
+    });
+  }
+
+  for (const order of newOnlineOrders) {
+    items.push({
+      id: `online-${order.id}`,
+      title: "New online order",
+      description: `${order.orderNumber} from ${order.customerName} (${order.phone})`,
+      type: "onlineOrder",
+      createdAt: order.createdAt,
+      href: `/online-orders/${order.id}`
     });
   }
 

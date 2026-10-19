@@ -15,6 +15,7 @@ const protectedRoutes = [
   "/suppliers",
   "/products",
   "/purchases",
+  "/online-orders",
   "/platform"
 ];
 

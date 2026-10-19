@@ -13,6 +13,7 @@ export type BusinessSettings = {
   multiCurrencyEnabled: boolean;
   exchangeRate: number;
   localCurrencyCode: string;
+  onlineShopEnabled: boolean;
 };
 
 const DEFAULT_SETTINGS: BusinessSettings = {
@@ -24,7 +25,8 @@ const DEFAULT_SETTINGS: BusinessSettings = {
   logoDataUrl: "",
   multiCurrencyEnabled: false,
   exchangeRate: 11000,
-  localCurrencyCode: "SLSH"
+  localCurrencyCode: "SLSH",
+  onlineShopEnabled: true
 };
 
 const SETTING_KEYS = {
@@ -36,7 +38,8 @@ const SETTING_KEYS = {
   logoDataUrl: "branding.logoDataUrl",
   multiCurrencyEnabled: "currency.multiCurrencyEnabled",
   exchangeRate: "currency.exchangeRate",
-  localCurrencyCode: "currency.localCurrencyCode"
+  localCurrencyCode: "currency.localCurrencyCode",
+  onlineShopEnabled: "shop.onlineShopEnabled"
 } as const;
 
 function readBoolean(value: string | null | undefined, fallback: boolean) {
@@ -89,7 +92,8 @@ export async function getBusinessSettings(tenantId: string): Promise<BusinessSet
       DEFAULT_SETTINGS.multiCurrencyEnabled
     ),
     exchangeRate: readNumber(values[SETTING_KEYS.exchangeRate], DEFAULT_SETTINGS.exchangeRate),
-    localCurrencyCode: readText(values[SETTING_KEYS.localCurrencyCode], DEFAULT_SETTINGS.localCurrencyCode)
+    localCurrencyCode: readText(values[SETTING_KEYS.localCurrencyCode], DEFAULT_SETTINGS.localCurrencyCode),
+    onlineShopEnabled: readBoolean(values[SETTING_KEYS.onlineShopEnabled], DEFAULT_SETTINGS.onlineShopEnabled)
   };
 }
 
@@ -106,7 +110,8 @@ export async function saveBusinessSettings(
     [SETTING_KEYS.logoDataUrl, settings.logoDataUrl],
     [SETTING_KEYS.multiCurrencyEnabled, String(settings.multiCurrencyEnabled)],
     [SETTING_KEYS.exchangeRate, String(settings.exchangeRate)],
-    [SETTING_KEYS.localCurrencyCode, settings.localCurrencyCode]
+    [SETTING_KEYS.localCurrencyCode, settings.localCurrencyCode],
+    [SETTING_KEYS.onlineShopEnabled, String(settings.onlineShopEnabled)]
   ] as const;
 
   await prisma.$transaction(
