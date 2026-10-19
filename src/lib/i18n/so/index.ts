@@ -5,6 +5,7 @@ import { inventory } from "@/lib/i18n/so/inventory";
 import { orders } from "@/lib/i18n/so/orders";
 import { payments } from "@/lib/i18n/so/payments";
 import { reports } from "@/lib/i18n/so/reports";
+import { shop } from "@/lib/i18n/so/shop";
 
 /**
  * Somali UI text, keyed by the English string shown in the interface.
@@ -17,5 +18,6 @@ export const so: Record<string, string> = {
   ...inventory,
   ...reports,
   ...billing,
+  ...shop,
   ...common
 };

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import { placeOnlineOrderAction } from "@/app/shop/[slug]/actions";
+import { useT } from "@/lib/i18n/client";
 
 export type ShopProduct = {
   id: string;
@@ -37,6 +38,7 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
   const [error, setError] = useState<string | null>(null);
   const [placed, setPlaced] = useState<{ orderNumber: string; total: number } | null>(null);
   const [pending, startTransition] = useTransition();
+  const t = useT();
 
   // The cart lives in the browser so it survives searching, paging and reloads. It is
   // read after mount (not in useState) so the server and first client render match.
@@ -114,7 +116,7 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
           if (unavailable?.length) setCart((prev) => prev.filter((line) => !unavailable.includes(line.id)));
         }
       } catch {
-        setError("Could not place your order. Please check your connection and try again.");
+        setError(t("Could not place your order. Please check your connection and try again."));
       }
     });
   }
@@ -124,7 +126,7 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
       <section>
         {products.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] px-4 py-12 text-center text-sm text-[var(--muted)]">
-            No products found.
+            {t("No products found.")}
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -160,12 +162,12 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
                         onClick={() => addToCart(product)}
                       >
                         {soldOut
-                          ? "Out of stock"
+                          ? t("Out of stock")
                           : inCart >= product.maxQuantity
-                            ? `All ${inCart} in cart`
+                            ? t("All {count} in cart", { count: inCart })
                             : inCart > 0
-                              ? `Add another (${inCart} in cart)`
-                              : "Add to cart"}
+                              ? t("Add another ({count} in cart)", { count: inCart })
+                              : t("Add to cart")}
                       </Button>
                     </div>
                   </div>
@@ -179,22 +181,22 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
       <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
         {placed && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-            <p className="font-semibold">Thank you, your order has been received.</p>
+            <p className="font-semibold">{t("Thank you, your order has been received.")}</p>
             <p className="mt-1">
-              Order number <span className="font-mono font-semibold">{placed.orderNumber}</span> · Total{" "}
+              {t("Order number")} <span className="font-mono font-semibold">{placed.orderNumber}</span> · {t("Total")}{" "}
               {formatCurrency(placed.total)}
             </p>
-            <p className="mt-1">We will contact you on the phone number you gave to confirm it.</p>
+            <p className="mt-1">{t("We will contact you on the phone number you gave to confirm it.")}</p>
           </div>
         )}
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
           <p className="mb-3 flex items-center gap-2 font-semibold">
-            <ShoppingBag className="h-4 w-4" /> Your cart ({itemCount})
+            <ShoppingBag className="h-4 w-4" /> {t("Your cart ({count})", { count: itemCount })}
           </p>
 
           {cart.length === 0 ? (
-            <p className="text-sm text-[var(--muted)]">Your cart is empty. Add products to place an order.</p>
+            <p className="text-sm text-[var(--muted)]">{t("Your cart is empty. Add products to place an order.")}</p>
           ) : (
             <ul className="space-y-3">
               {cart.map((line) => (
@@ -208,7 +210,7 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
                   </div>
                   <button
                     type="button"
-                    aria-label="Decrease quantity"
+                    aria-label={t("Decrease quantity")}
                     className="rounded-lg border border-[var(--border)] p-1 hover:bg-black/5"
                     onClick={() => setQuantity(line.id, line.quantity - 1)}
                   >
@@ -217,7 +219,7 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
                   <span className="w-6 text-center">{line.quantity}</span>
                   <button
                     type="button"
-                    aria-label="Increase quantity"
+                    aria-label={t("Increase quantity")}
                     className="rounded-lg border border-[var(--border)] p-1 hover:bg-black/5 disabled:opacity-40"
                     disabled={line.quantity >= line.maxQuantity}
                     onClick={() => setQuantity(line.id, line.quantity + 1)}
@@ -226,7 +228,7 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
                   </button>
                   <button
                     type="button"
-                    aria-label="Remove"
+                    aria-label={t("Remove")}
                     className="rounded-lg p-1 text-red-600 hover:bg-red-50"
                     onClick={() => setQuantity(line.id, 0)}
                   >
@@ -238,7 +240,7 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
           )}
 
           <div className="mt-4 flex justify-between border-t border-[var(--border)] pt-3 text-sm font-semibold">
-            <span>Total</span>
+            <span>{t("Total")}</span>
             <span>{formatCurrency(total)}</span>
           </div>
         </div>
@@ -247,22 +249,22 @@ export function ShopClient({ slug, products }: { slug: string; products: ShopPro
 
         {cart.length > 0 && (
           <form action={submit} className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
-            <p className="font-semibold">Your details</p>
-            <Input name="customerName" placeholder="Full name *" required minLength={2} maxLength={150} />
-            <Input name="phone" type="tel" placeholder="Phone number *" required minLength={5} maxLength={30} />
-            <Input name="email" type="email" placeholder="Email (optional)" maxLength={190} />
-            <Input name="address" placeholder="Delivery address (optional)" maxLength={255} />
+            <p className="font-semibold">{t("Your details")}</p>
+            <Input name="customerName" placeholder={t("Full name *")} required minLength={2} maxLength={150} />
+            <Input name="phone" type="tel" placeholder={t("Phone number *")} required minLength={5} maxLength={30} />
+            <Input name="email" type="email" placeholder={t("Email (optional)")} maxLength={190} />
+            <Input name="address" placeholder={t("Delivery address (optional)")} maxLength={255} />
             <textarea
               name="notes"
               rows={3}
               maxLength={1000}
-              placeholder="Notes for the shop (optional)"
+              placeholder={t("Notes for the shop (optional)")}
               className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
             />
             {/* Honeypot for bots; hidden from people and assistive tech. */}
             <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
             <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Placing order..." : `Place order · ${formatCurrency(total)}`}
+              {pending ? t("Placing order...") : t("Place order · {total}", { total: formatCurrency(total) })}
             </Button>
           </form>
         )}

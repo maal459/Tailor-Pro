@@ -7,6 +7,7 @@ import { assertWithinPlanLimit } from "@/lib/billing/limits";
 import { customerRepository } from "@/lib/repositories/customer-repository";
 import { ONLINE_ORDER_STATUSES } from "@/lib/validators/online-order";
 import { logActivity } from "@/lib/activity-log";
+import { getT } from "@/lib/i18n/server";
 
 function revalidateOnlineOrderViews(orderId: string) {
   revalidatePath("/online-orders");
@@ -16,10 +17,11 @@ function revalidateOnlineOrderViews(orderId: string) {
 
 export async function updateOnlineOrderStatusAction(orderId: string, status: string) {
   const session = await requirePermission("orders.manage");
-  if (!(ONLINE_ORDER_STATUSES as readonly string[]).includes(status)) throw new Error("Invalid status");
+  const t = await getT();
+  if (!(ONLINE_ORDER_STATUSES as readonly string[]).includes(status)) throw new Error(t("Invalid status"));
 
   const existing = await prisma.onlineOrder.findFirst({ where: { id: orderId, tenantId: session.tenantId } });
-  if (!existing) throw new Error("Online order not found");
+  if (!existing) throw new Error(t("Online order not found"));
 
   await prisma.onlineOrder.updateMany({
     where: { id: orderId, tenantId: session.tenantId },
@@ -46,7 +48,7 @@ export async function linkOnlineOrderCustomerAction(orderId: string) {
   const session = await requirePermission("orders.manage");
 
   const order = await prisma.onlineOrder.findFirst({ where: { id: orderId, tenantId: session.tenantId } });
-  if (!order) throw new Error("Online order not found");
+  if (!order) throw new Error((await getT())("Online order not found"));
   if (order.customerId) return;
 
   let customer = await prisma.customer.findFirst({
@@ -80,7 +82,7 @@ export async function deleteOnlineOrderAction(orderId: string) {
   const session = await requirePermission("orders.manage");
 
   const existing = await prisma.onlineOrder.findFirst({ where: { id: orderId, tenantId: session.tenantId } });
-  if (!existing) throw new Error("Online order not found");
+  if (!existing) throw new Error((await getT())("Online order not found"));
 
   await prisma.onlineOrderItem.deleteMany({ where: { tenantId: session.tenantId, onlineOrderId: orderId } });
   await prisma.onlineOrder.deleteMany({ where: { id: orderId, tenantId: session.tenantId } });

@@ -11,6 +11,7 @@ import { onlineOrderRepository } from "@/lib/repositories/online-order-repositor
 import { rateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-log";
 import { toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export type PlaceOnlineOrderResult =
   | { ok: true; orderNumber: string; total: number }
@@ -29,6 +30,7 @@ function generateOrderNumber() {
  * actions in production, and customers need to see why an order was refused.
  */
 export async function placeOnlineOrderAction(slug: string, input: unknown): Promise<PlaceOnlineOrderResult> {
+  const t = await getT();
   const requestHeaders = await headers();
   const ip =
     requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
@@ -36,21 +38,21 @@ export async function placeOnlineOrderAction(slug: string, input: unknown): Prom
     "";
   // Spam guard: 10 orders / 15 min per IP. Fails open when the IP is unknown, like login.
   if (ip && !rateLimit(`shop-order:${ip}`, 10, 15 * 60 * 1000)) {
-    return { ok: false, error: "Too many orders from this device. Please try again later." };
+    return { ok: false, error: t("Too many orders from this device. Please try again later.") };
   }
 
   const tenant = await getTenantBySlug(slug);
   if (!tenant || tenant.status !== "ACTIVE") {
-    return { ok: false, error: "This shop is not available." };
+    return { ok: false, error: t("This shop is not available.") };
   }
   const settings = await getBusinessSettings(tenant.id);
   if (!settings.onlineShopEnabled) {
-    return { ok: false, error: "This shop is not accepting online orders right now." };
+    return { ok: false, error: t("This shop is not accepting online orders right now.") };
   }
 
   const parsed = placeOnlineOrderSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid order details" };
+    return { ok: false, error: t(parsed.error.issues[0]?.message ?? "Invalid order details") };
   }
   const data = parsed.data;
 
@@ -73,7 +75,7 @@ export async function placeOnlineOrderAction(slug: string, input: unknown): Prom
     const found = new Set(products.map((product) => product.id));
     return {
       ok: false,
-      error: "Some products in your cart are no longer available and were removed. Please review your cart.",
+      error: t("Some products in your cart are no longer available and were removed. Please review your cart."),
       unavailableProductIds: [...quantities.keys()].filter((id) => !found.has(id))
     };
   }
@@ -86,8 +88,8 @@ export async function placeOnlineOrderAction(slug: string, input: unknown): Prom
         ok: false,
         error:
           product.quantity > 0
-            ? `Only ${product.quantity} of "${product.name}" left in stock.`
-            : `"${product.name}" is out of stock.`
+            ? t('Only {count} of "{name}" left in stock.', { count: product.quantity, name: product.name })
+            : t('"{name}" is out of stock.', { name: product.name })
       };
     }
     const unitPrice = toNumber(product.sellingPrice);

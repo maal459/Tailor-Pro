@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toaster";
+import { useT } from "@/lib/i18n/client";
 import { deleteOnlineOrderAction } from "@/app/(dashboard)/online-orders/actions";
 
 /** Deletes the order, then leaves the now-missing detail page for the list. */
@@ -10,6 +11,7 @@ export function DeleteOnlineOrderButton({ orderId, orderNumber }: { orderId: str
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
 
   return (
     <button
@@ -17,19 +19,19 @@ export function DeleteOnlineOrderButton({ orderId, orderNumber }: { orderId: str
       disabled={isPending}
       className="text-xs font-medium text-red-600 hover:underline"
       onClick={() => {
-        if (!window.confirm(`Delete online order ${orderNumber}? This cannot be undone.`)) return;
+        if (!window.confirm(t("Delete online order {number}? This cannot be undone.", { number: orderNumber }))) return;
         startTransition(async () => {
           try {
             await deleteOnlineOrderAction(orderId);
-            toast.push("Online order deleted");
+            toast.push(t("Online order deleted"));
             router.push("/online-orders");
           } catch (error) {
-            toast.push(error instanceof Error ? error.message : "Operation failed", "error");
+            toast.push(error instanceof Error ? error.message : t("Operation failed"), "error");
           }
         });
       }}
     >
-      {isPending ? "…" : "Delete order"}
+      {isPending ? "…" : t("Delete order")}
     </button>
   );
 }
