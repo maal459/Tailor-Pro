@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { createCustomerAction, deleteCustomerAction } from "@/app/(dashboard)/customers/actions";
+import { deleteCustomerAction } from "@/app/(dashboard)/customers/actions";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/table";
 import { ActionButton } from "@/components/ui/action-button";
+import { CustomerForm } from "@/components/forms/customer-form";
 import { customerRepository } from "@/lib/repositories/customer-repository";
 import { requireAuth } from "@/lib/auth/guards";
 import { formatCurrency, toNumber } from "@/lib/utils";
@@ -48,12 +49,7 @@ export default async function CustomersPage({
       </div>
 
       <Card>
-        <form className="grid gap-3 md:grid-cols-3" action={createCustomerAction}>
-          <Input name="fullName" placeholder={t("Full name")} required />
-          <Input name="phone" placeholder={t("Phone")} required />
-          <Input name="address" placeholder={t("Address")} defaultValue="Borama, Somaliland" />
-          <Button type="submit" className="md:col-span-3 md:w-fit">{t("Add Customer")}</Button>
-        </form>
+        <CustomerForm />
       </Card>
 
       <Card>

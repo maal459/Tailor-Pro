@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/auth/guards";
 import { createCustomerSchema, updateCustomerSchema } from "@/lib/validators/customer";
 import { customerRepository } from "@/lib/repositories/customer-repository";
@@ -10,7 +11,20 @@ import { prisma } from "@/lib/db/prisma";
 import { logActivity } from "@/lib/activity-log";
 import { getT } from "@/lib/i18n/server";
 
-export async function createCustomerAction(formData: FormData) {
+export type CreateCustomerResult = { ok: true } | { ok: false; error: string };
+
+// customerNumber is unique across all tenants, so a timestamp-only number can collide.
+function nextCustomerNumber(attempt: number) {
+  const timestamp = Date.now().toString().slice(-6);
+  if (attempt === 0) return `CUST-${timestamp}`;
+  return `CUST-${timestamp}${Math.floor(Math.random() * 900 + 100)}`;
+}
+
+/**
+ * Returns a result instead of throwing: errors thrown from a server action are
+ * redacted in production and crash the page, so the form would show nothing useful.
+ */
+export async function createCustomerAction(formData: FormData): Promise<CreateCustomerResult> {
   const session = await requireAuth();
 
   const payload = {
@@ -26,21 +40,56 @@ export async function createCustomerAction(formData: FormData) {
   const parsed = createCustomerSchema.safeParse(payload);
   if (!parsed.success) {
     const t = await getT();
-    throw new Error(t(parsed.error.issues[0]?.message ?? "Invalid customer data"));
+    return { ok: false, error: t(parsed.error.issues[0]?.message ?? "Invalid customer data") };
   }
 
-  // Enforce the tenant's subscription plan cap on customers.
-  await assertWithinPlanLimit(session.tenantId, "customers");
+  try {
+    // Enforce the tenant's subscription plan cap on customers.
+    await assertWithinPlanLimit(session.tenantId, "customers");
+  } catch (error) {
+    // Its messages are written to be shown to the user.
+    return { ok: false, error: error instanceof Error ? error.message : "Plan limit reached" };
+  }
 
-  const timestamp = Date.now().toString().slice(-6);
-  await customerRepository.create({
-    tenantId: session.tenantId,
-    customerNumber: `CUST-${timestamp}`,
-    ...parsed.data,
-    email: parsed.data.email || undefined
-  });
+  try {
+    const data = {
+      tenantId: session.tenantId,
+      fullName: parsed.data.fullName,
+      phone: parsed.data.phone,
+      alternativePhone: parsed.data.alternativePhone || undefined,
+      email: parsed.data.email || undefined,
+      address: parsed.data.address || undefined,
+      city: parsed.data.city || undefined,
+      notes: parsed.data.notes || undefined
+    };
+
+    let customer: Awaited<ReturnType<typeof customerRepository.create>> | undefined;
+    for (let attempt = 0; !customer; attempt++) {
+      try {
+        customer = await customerRepository.create({ ...data, customerNumber: nextCustomerNumber(attempt) });
+      } catch (error) {
+        const isNumberClash =
+          error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002" && attempt < 4;
+        if (!isNumberClash) throw error;
+      }
+    }
+
+    await logActivity({
+      tenantId: session.tenantId,
+      actorUserId: session.userId,
+      entityType: "Customer",
+      entityId: customer.id,
+      action: "create",
+      message: `Added customer "${customer.fullName}" (${customer.customerNumber})`
+    });
+  } catch (error) {
+    console.error("createCustomerAction failed", error);
+    const t = await getT();
+    return { ok: false, error: t("Could not save the customer. Please try again.") };
+  }
 
   revalidatePath("/customers");
+  return { ok: true };
 }
 
 export async function updateCustomerAction(customerId: string, formData: FormData) {

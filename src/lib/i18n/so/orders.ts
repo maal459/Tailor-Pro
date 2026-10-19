@@ -17,6 +17,11 @@ export const orders: Record<string, string> = {
   "No orders or payments yet.": "Weli ma jiraan dalabaad ama lacag-bixinno.",
   "Manage customer records and profiles": "Maamul diiwaannada iyo xogta macaamiisha",
   "Add Customer": "Ku dar macmiil",
+  "Customer added": "Macmiilka waa lagu daray",
+  "Could not save the customer. Please try again.": "Macmiilka lama kaydin karin. Fadlan isku day mar kale.",
+  "Full name must be at least 2 characters": "Magaca buuxa waa inuu ka koobnaadaa ugu yaraan 2 xaraf",
+  "Phone number must be at least 5 characters": "Lambarka taleefanku waa inuu ka koobnaadaa ugu yaraan 5 xaraf",
+  "Enter a valid email address": "Geli cinwaan iimayl sax ah",
   "Search name, phone, customer number": "Raadi magac, taleefan, lambarka macmiilka",
   "Customer #": "Lambarka macmiilka",
   "Delete customer \"{name}\"? This cannot be undone.":
