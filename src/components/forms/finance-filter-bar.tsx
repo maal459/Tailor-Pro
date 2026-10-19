@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 const PLANS = ["FREE", "BASIC", "PRO", "ENTERPRISE"] as const;
 
@@ -21,6 +22,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export function FinanceFilterBar() {
   const router = useRouter();
   const sp = useSearchParams();
+  const t = useT();
   const [plan, setPlan] = useState(sp.get("plan") ?? "");
   const [from, setFrom] = useState(sp.get("from") ?? "");
   const [to, setTo] = useState(sp.get("to") ?? "");
@@ -45,23 +47,23 @@ export function FinanceFilterBar() {
 
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <Field label="Plan">
+      <Field label={t("Plan")}>
         <Select value={plan} onChange={(e) => setPlan(e.target.value)} className="w-40">
-          <option value="">All plans</option>
+          <option value="">{t("All plans")}</option>
           {PLANS.map((p) => (
-            <option key={p} value={p}>{p}</option>
+            <option key={p} value={p}>{t(p)}</option>
           ))}
         </Select>
       </Field>
-      <Field label="Joined from">
+      <Field label={t("Joined from")}>
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
       </Field>
-      <Field label="Joined to">
+      <Field label={t("Joined to")}>
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
       </Field>
-      <Button type="button" onClick={apply}>Apply</Button>
+      <Button type="button" onClick={apply}>{t("Apply")}</Button>
       {active && (
-        <Button type="button" variant="secondary" onClick={clear}>Clear</Button>
+        <Button type="button" variant="secondary" onClick={clear}>{t("Clear")}</Button>
       )}
     </div>
   );

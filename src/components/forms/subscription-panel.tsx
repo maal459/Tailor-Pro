@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toaster";
+import { useT } from "@/lib/i18n/client";
 import {
   generateInvoiceAction,
   updateTenantBillingAction
@@ -39,6 +40,7 @@ export function SubscriptionPanel({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const [saving, startSaving] = useTransition();
   const [generating, startGenerating] = useTransition();
   const [values, setValues] = useState<Values>(initial);
@@ -48,10 +50,10 @@ export function SubscriptionPanel({
     startSaving(async () => {
       try {
         await updateTenantBillingAction(tenantId, values);
-        toast.push("Billing settings saved");
+        toast.push(t("Billing settings saved"));
         router.refresh();
       } catch (error) {
-        toast.push(error instanceof Error ? error.message : "Failed to save", "error");
+        toast.push(error instanceof Error ? error.message : t("Failed to save"), "error");
       }
     });
   };
@@ -60,42 +62,42 @@ export function SubscriptionPanel({
     startGenerating(async () => {
       try {
         await generateInvoiceAction(tenantId);
-        toast.push("Invoice generated");
+        toast.push(t("Invoice generated"));
         router.refresh();
       } catch (error) {
-        toast.push(error instanceof Error ? error.message : "Failed to generate invoice", "error");
+        toast.push(error instanceof Error ? error.message : t("Failed to generate invoice"), "error");
       }
     });
   };
 
   return (
     <form onSubmit={save} className="grid gap-3 md:grid-cols-2">
-      <Field label="Billing cycle">
+      <Field label={t("Billing cycle")}>
         <Select
           value={values.billingCycle}
           onChange={(e) => setValues((p) => ({ ...p, billingCycle: e.target.value }))}
         >
-          <option value="MONTHLY">Monthly</option>
-          <option value="YEARLY">Yearly (2 months free)</option>
+          <option value="MONTHLY">{t("Monthly")}</option>
+          <option value="YEARLY">{t("Yearly (2 months free)")}</option>
         </Select>
       </Field>
 
-      <Field label="Payment gateway (for auto-collect)">
+      <Field label={t("Payment gateway (for auto-collect)")}>
         <Select
           value={values.gatewayProvider}
           onChange={(e) => setValues((p) => ({ ...p, gatewayProvider: e.target.value }))}
         >
-          <option value="">None (manual)</option>
+          <option value="">{t("None (manual)")}</option>
           <option value="ZAAD">ZAAD</option>
           <option value="EDAHAB">eDahab</option>
         </Select>
       </Field>
 
-      <Field label="Payer wallet / phone">
+      <Field label={t("Payer wallet / phone")}>
         <Input
           value={values.gatewayPayerRef}
           onChange={(e) => setValues((p) => ({ ...p, gatewayPayerRef: e.target.value }))}
-          placeholder="e.g. 63xxxxxxx"
+          placeholder={t("e.g. 63xxxxxxx")}
         />
       </Field>
 
@@ -106,21 +108,21 @@ export function SubscriptionPanel({
           onChange={(e) => setValues((p) => ({ ...p, autoCollect: e.target.checked }))}
           className="h-4 w-4"
         />
-        Auto-collect on renewal
+        {t("Auto-collect on renewal")}
       </label>
 
       <div className="md:col-span-2 flex flex-wrap gap-2">
         <Button type="submit" disabled={saving}>
-          {saving ? "Saving…" : "Save billing settings"}
+          {saving ? t("Saving…") : t("Save billing settings")}
         </Button>
         <Button
           type="button"
           variant="secondary"
           onClick={generate}
           disabled={generating || plan === "FREE"}
-          title={plan === "FREE" ? "Free-plan tenants are not billed" : undefined}
+          title={plan === "FREE" ? t("Free-plan tenants are not billed") : undefined}
         >
-          {generating ? "Generating…" : "Generate invoice now"}
+          {generating ? t("Generating…") : t("Generate invoice now")}
         </Button>
       </div>
     </form>

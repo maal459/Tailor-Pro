@@ -1,6 +1,7 @@
 import { endOfDay, startOfDay, subDays } from "date-fns";
 import { prisma } from "@/lib/db/prisma";
 import { toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 
 export type NotificationItem = {
   id: string;
@@ -12,6 +13,7 @@ export type NotificationItem = {
 };
 
 export async function buildNotificationItems(tenantId: string, seenAt?: Date | null) {
+  const t = await getT();
   const now = new Date();
   const threshold = seenAt ?? subDays(now, 7);
 
@@ -55,8 +57,8 @@ export async function buildNotificationItems(tenantId: string, seenAt?: Date | n
   for (const order of dueToday) {
     items.push({
       id: `due-${order.id}`,
-      title: "Order due today",
-      description: `${order.orderNumber} for ${order.customer.fullName}`,
+      title: t("Order due today"),
+      description: t("{order} for {customer}", { order: order.orderNumber, customer: order.customer.fullName }),
       type: "dueToday",
       createdAt: order.updatedAt,
       href: "/notifications"
@@ -66,8 +68,8 @@ export async function buildNotificationItems(tenantId: string, seenAt?: Date | n
   for (const order of lateOrders) {
     items.push({
       id: `late-${order.id}`,
-      title: "Late order",
-      description: `${order.orderNumber} for ${order.customer.fullName}`,
+      title: t("Late order"),
+      description: t("{order} for {customer}", { order: order.orderNumber, customer: order.customer.fullName }),
       type: "lateOrder",
       createdAt: order.deliveryDate ?? order.updatedAt,
       href: "/notifications"
@@ -82,8 +84,12 @@ export async function buildNotificationItems(tenantId: string, seenAt?: Date | n
     if (balance > 0.01) {
       items.push({
         id: `outstanding-${order.id}`,
-        title: "Outstanding balance",
-        description: `${order.customer.fullName} owes $${balance.toFixed(2)} on ${order.orderNumber}`,
+        title: t("Outstanding balance"),
+        description: t("{customer} owes ${amount} on {order}", {
+          customer: order.customer.fullName,
+          amount: balance.toFixed(2),
+          order: order.orderNumber
+        }),
         type: "outstanding",
         createdAt: order.updatedAt,
         href: "/ledger"
@@ -94,8 +100,12 @@ export async function buildNotificationItems(tenantId: string, seenAt?: Date | n
   for (const payment of recentPayments) {
     items.push({
       id: `payment-${payment.id}`,
-      title: "Payment received",
-      description: `${payment.customer.fullName} paid $${toNumber(payment.amount).toFixed(2)} for ${payment.order.orderNumber}`,
+      title: t("Payment received"),
+      description: t("{customer} paid ${amount} for {order}", {
+        customer: payment.customer.fullName,
+        amount: toNumber(payment.amount).toFixed(2),
+        order: payment.order.orderNumber
+      }),
       type: "recentPayment",
       createdAt: payment.paymentDate,
       href: "/payments/history"

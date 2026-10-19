@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 export type SelectOption = { id: string; label: string };
 
@@ -28,6 +29,7 @@ export function SearchableSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   // Match anywhere in the label (not just the start), and cap how many are rendered so a
   // large list (thousands of customers/orders) never renders thousands of DOM nodes at once.
@@ -60,7 +62,7 @@ export function SearchableSelect({
         className="flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm transition-colors focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
       >
         <span className={cn("truncate text-left", selected ? "text-[var(--text)]" : "text-[var(--muted)]")}>
-          {selected ? selected.label : placeholder}
+          {selected ? selected.label : t(placeholder)}
         </span>
         <ChevronDown
           className={cn(
@@ -79,7 +81,7 @@ export function SearchableSelect({
               <input
                 autoFocus
                 className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] pl-8 pr-3 text-sm outline-none focus:border-[var(--primary)]"
-                placeholder="Search…"
+                placeholder={t("Search…")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -89,7 +91,7 @@ export function SearchableSelect({
           {/* option list */}
           <div className="max-h-52 overflow-y-auto pb-2">
             {filtered.length === 0 ? (
-              <p className="px-3 py-3 text-center text-sm text-[var(--muted)]">No results</p>
+              <p className="px-3 py-3 text-center text-sm text-[var(--muted)]">{t("No results")}</p>
             ) : (
               filtered.map((opt) => (
                 <button
@@ -111,7 +113,7 @@ export function SearchableSelect({
             )}
             {overflow > 0 && (
               <p className="px-3 py-2 text-center text-xs text-[var(--muted)]">
-                +{overflow} more — keep typing to narrow
+                {t("+{count} more — keep typing to narrow", { count: overflow })}
               </p>
             )}
           </div>

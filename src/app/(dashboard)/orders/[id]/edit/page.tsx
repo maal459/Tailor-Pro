@@ -9,6 +9,7 @@ import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { toNumber } from "@/lib/utils";
 import { updateOrderAction } from "@/app/(dashboard)/orders/actions";
+import { getT } from "@/lib/i18n/server";
 
 const STATES = ["PENDING", "CUTTING", "SEWING", "FINISHING", "READY", "DELIVERED", "CANCELLED"];
 const PRIORITIES = ["LOW", "NORMAL", "HIGH", "URGENT"];
@@ -19,6 +20,7 @@ export default async function EditOrderPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await requireAuth();
+  const t = await getT();
   const { id } = await params;
 
   const order = await prisma.order.findFirst({
@@ -30,42 +32,42 @@ export default async function EditOrderPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Edit Order {order.orderNumber}</h1>
+        <h1 className="text-2xl font-semibold">{t("Edit Order {number}", { number: order.orderNumber })}</h1>
         <p className="text-sm text-[var(--muted)]">{order.customer.fullName}</p>
       </div>
 
       <Card>
         <p className="mb-3 text-xs text-[var(--muted)]">
-          Editing workflow &amp; pricing fields. To change garments, create a new order.
+          {t("Editing workflow & pricing fields. To change garments, create a new order.")}
         </p>
         <form action={updateOrderAction.bind(null, id)} className="grid gap-3 md:grid-cols-2">
           <label className="space-y-1 text-sm">
-            <span className="font-medium">Status</span>
+            <span className="font-medium">{t("Status")}</span>
             <Select name="status" defaultValue={order.status}>
-              {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+              {STATES.map((s) => <option key={s} value={s}>{t(s)}</option>)}
             </Select>
           </label>
           <label className="space-y-1 text-sm">
-            <span className="font-medium">Priority</span>
+            <span className="font-medium">{t("Priority")}</span>
             <Select name="priority" defaultValue={order.priority}>
-              {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+              {PRIORITIES.map((p) => <option key={p} value={p}>{t(p)}</option>)}
             </Select>
           </label>
           <label className="space-y-1 text-sm">
-            <span className="font-medium">Delivery date</span>
+            <span className="font-medium">{t("Delivery date")}</span>
             <Input type="date" name="deliveryDate" defaultValue={order.deliveryDate ? format(order.deliveryDate, "yyyy-MM-dd") : ""} />
           </label>
           <label className="space-y-1 text-sm">
-            <span className="font-medium">Discount</span>
+            <span className="font-medium">{t("Discount")}</span>
             <Input type="number" step="0.01" min="0" name="discountAmount" defaultValue={String(toNumber(order.discountAmount))} />
           </label>
           <label className="space-y-1 text-sm md:col-span-2">
-            <span className="font-medium">Notes</span>
+            <span className="font-medium">{t("Notes")}</span>
             <Input name="notes" defaultValue={order.notes ?? ""} />
           </label>
           <div className="flex gap-2 md:col-span-2">
-            <Button type="submit">Save Changes</Button>
-            <Link href={`/orders/${id}`} className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">Cancel</Link>
+            <Button type="submit">{t("Save changes")}</Button>
+            <Link href={`/orders/${id}`} className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm hover:bg-black/5">{t("Cancel")}</Link>
           </div>
         </form>
       </Card>

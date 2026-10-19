@@ -8,6 +8,7 @@ import { requirePermission } from "@/lib/auth/guards";
 import { productRepository } from "@/lib/repositories/product-repository";
 import { supplierRepository } from "@/lib/repositories/supplier-repository";
 import { toNumber } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
 import { updateProductAction } from "@/app/(dashboard)/products/actions";
 
 export default async function EditProductPage({
@@ -16,6 +17,7 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await requirePermission("products.manage");
+  const t = await getT();
   const { id } = await params;
 
   const [product, categories, suppliers] = await Promise.all([
@@ -29,7 +31,7 @@ export default async function EditProductPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Edit Product</h1>
+        <h1 className="text-2xl font-semibold">{t("Edit Product")}</h1>
         <p className="text-sm text-[var(--muted)]">
           {product.name} · {product.sku}
         </p>
@@ -39,15 +41,15 @@ export default async function EditProductPage({
         <form className="space-y-4" action={updateProductAction.bind(null, product.id)}>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--muted)]">Product Name *</label>
+              <label className="text-xs font-medium text-[var(--muted)]">{t("Product Name *")}</label>
               <Input name="name" defaultValue={product.name} required />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--muted)]">SKU</label>
+              <label className="text-xs font-medium text-[var(--muted)]">{t("SKU")}</label>
               <Input name="sku" defaultValue={product.sku} />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--muted)]">Category *</label>
+              <label className="text-xs font-medium text-[var(--muted)]">{t("Category *")}</label>
               <Select name="categoryId" defaultValue={product.categoryId} required>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
@@ -57,9 +59,9 @@ export default async function EditProductPage({
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--muted)]">Supplier</label>
+              <label className="text-xs font-medium text-[var(--muted)]">{t("Supplier")}</label>
               <Select name="supplierId" defaultValue={product.supplierId ?? ""}>
-                <option value="">No supplier</option>
+                <option value="">{t("No supplier")}</option>
                 {suppliers.map((supplier) => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.supplierName}
@@ -68,7 +70,7 @@ export default async function EditProductPage({
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--muted)]">Cost Price ($) *</label>
+              <label className="text-xs font-medium text-[var(--muted)]">{t("Cost Price ($) *")}</label>
               <Input
                 name="costPrice"
                 type="number"
@@ -79,7 +81,7 @@ export default async function EditProductPage({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--muted)]">Selling Price ($) *</label>
+              <label className="text-xs font-medium text-[var(--muted)]">{t("Selling Price ($) *")}</label>
               <Input
                 name="sellingPrice"
                 type="number"
@@ -90,11 +92,11 @@ export default async function EditProductPage({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--muted)]">Quantity *</label>
+              <label className="text-xs font-medium text-[var(--muted)]">{t("Quantity *")}</label>
               <Input name="quantity" type="number" min={0} defaultValue={product.quantity} required />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--muted)]">Minimum Stock *</label>
+              <label className="text-xs font-medium text-[var(--muted)]">{t("Minimum Stock *")}</label>
               <Input
                 name="minimumStock"
                 type="number"
@@ -104,13 +106,13 @@ export default async function EditProductPage({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-[var(--muted)]">Unit</label>
-              <Input name="unit" defaultValue={product.unit ?? ""} placeholder="e.g. meter, piece" />
+              <label className="text-xs font-medium text-[var(--muted)]">{t("Unit")}</label>
+              <Input name="unit" defaultValue={product.unit ?? ""} placeholder={t("e.g. meter, piece")} />
             </div>
           </div>
 
           <div className="rounded-xl border border-dashed border-[var(--border)] p-4">
-            <p className="mb-3 text-sm font-semibold">Product Image</p>
+            <p className="mb-3 text-sm font-semibold">{t("Product Image")}</p>
             <div className="flex flex-wrap items-center gap-4">
               {product.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -121,7 +123,7 @@ export default async function EditProductPage({
                 />
               ) : (
                 <div className="flex h-20 w-20 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg)] text-xs text-[var(--muted)]">
-                  No image
+                  {t("No image")}
                 </div>
               )}
               <div className="flex flex-col gap-2">
@@ -134,7 +136,7 @@ export default async function EditProductPage({
                 {product.imageUrl && (
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="removeImage" />
-                    Remove current image
+                    {t("Remove current image")}
                   </label>
                 )}
               </div>
@@ -142,12 +144,12 @@ export default async function EditProductPage({
           </div>
 
           <div className="flex gap-2">
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit">{t("Save Changes")}</Button>
             <Link
               href="/products"
               className="inline-flex items-center rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm"
             >
-              Cancel
+              {t("Cancel")}
             </Link>
           </div>
         </form>

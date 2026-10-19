@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { AsyncCombobox } from "@/components/ui/async-combobox";
 import { useToast } from "@/components/ui/toaster";
+import { useT } from "@/lib/i18n/client";
 
 type Option = { id: string; label: string };
 
@@ -26,6 +27,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export function OrderForm({ garmentTypes }: Props) {
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
+  const t = useT();
 
   const [customerId, setCustomerId] = useState("");
   const [customerProfiles, setCustomerProfiles] = useState<Option[]>([]);
@@ -53,8 +55,8 @@ export function OrderForm({ garmentTypes }: Props) {
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!customerId) { toast.push("Please select a customer", "error"); return; }
-    if (!item.garmentTypeId) { toast.push("Please select a garment type", "error"); return; }
+    if (!customerId) { toast.push(t("Please select a customer"), "error"); return; }
+    if (!item.garmentTypeId) { toast.push(t("Please select a garment type"), "error"); return; }
 
     const form = new FormData(event.currentTarget);
 
@@ -73,13 +75,13 @@ export function OrderForm({ garmentTypes }: Props) {
             measurementProfileId: item.measurementProfileId || undefined
           }]
         });
-        toast.push("Order created successfully");
+        toast.push(t("Order created successfully"));
         // reset form
         setCustomerId("");
         setItem({ garmentTypeId: "", measurementProfileId: "", fabric: "", color: "", quantity: 1, unitPrice: 0, tailoringInstructions: "" });
         (event.target as HTMLFormElement).reset();
       } catch (error) {
-        const text = error instanceof Error ? error.message : "Failed to create order";
+        const text = error instanceof Error ? error.message : t("Failed to create order");
         toast.push(text, "error");
       }
     });
@@ -89,78 +91,78 @@ export function OrderForm({ garmentTypes }: Props) {
     <form onSubmit={submit} className="space-y-5">
       {/* ─── Order details ─── */}
       <div>
-        <p className="mb-3 text-sm font-semibold text-[var(--text)]">Order Details</p>
+        <p className="mb-3 text-sm font-semibold text-[var(--text)]">{t("Order Details")}</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Customer *">
+          <Field label={`${t("Customer")} *`}>
             <AsyncCombobox
               endpoint="/api/search/customers"
               value={customerId}
               onSelect={(r) => { setCustomerId(r?.id ?? ""); setItem((prev) => ({ ...prev, measurementProfileId: "" })); }}
-              placeholder="Search by phone or name…"
+              placeholder={t("Search by phone or name…")}
             />
           </Field>
 
-          <Field label="Delivery Date">
+          <Field label={t("Delivery date")}>
             <Input name="deliveryDate" type="date" />
           </Field>
 
-          <Field label="Priority">
+          <Field label={t("Priority")}>
             <Select name="priority" defaultValue="NORMAL">
-              <option value="LOW">Low</option>
-              <option value="NORMAL">Normal</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
+              <option value="LOW">{t("LOW")}</option>
+              <option value="NORMAL">{t("NORMAL")}</option>
+              <option value="HIGH">{t("HIGH")}</option>
+              <option value="URGENT">{t("URGENT")}</option>
             </Select>
           </Field>
 
-          <Field label="Status">
+          <Field label={t("Status")}>
             <Select name="status" defaultValue="PENDING">
-              <option value="PENDING">Pending</option>
-              <option value="CUTTING">Cutting</option>
-              <option value="SEWING">Sewing</option>
-              <option value="FINISHING">Finishing</option>
-              <option value="READY">Ready</option>
+              <option value="PENDING">{t("PENDING")}</option>
+              <option value="CUTTING">{t("CUTTING")}</option>
+              <option value="SEWING">{t("SEWING")}</option>
+              <option value="FINISHING">{t("FINISHING")}</option>
+              <option value="READY">{t("READY")}</option>
             </Select>
           </Field>
 
-          <Field label="Discount ($)">
+          <Field label={t("Discount ($)")}>
             <Input name="discountAmount" type="number" step="0.01" min={0} placeholder="0.00" />
           </Field>
 
-          <Field label="Order Notes">
-            <Input name="notes" placeholder="Optional notes…" />
+          <Field label={t("Order Notes")}>
+            <Input name="notes" placeholder={t("Optional notes…")} />
           </Field>
         </div>
       </div>
 
       {/* ─── Garment item ─── */}
       <div className="rounded-xl border border-dashed border-[var(--border)] p-4">
-        <p className="mb-3 text-sm font-semibold text-[var(--text)]">Garment Item</p>
+        <p className="mb-3 text-sm font-semibold text-[var(--text)]">{t("Garment Item")}</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Garment Type *">
+          <Field label={`${t("Garment type")} *`}>
             <Select
               value={item.garmentTypeId}
               onChange={(e) => setItem((prev) => ({ ...prev, garmentTypeId: e.target.value }))}
               required
             >
-              <option value="">Select garment type…</option>
+              <option value="">{t("Select garment type…")}</option>
               {garmentTypes.map((gt) => (
                 <option key={gt.id} value={gt.id}>{gt.label}</option>
               ))}
             </Select>
           </Field>
 
-          <Field label="Measurement Profile">
+          <Field label={t("Measurement Profile")}>
             <Select
               value={item.measurementProfileId}
               onChange={(e) => setItem((prev) => ({ ...prev, measurementProfileId: e.target.value }))}
             >
               <option value="">
                 {!customerId
-                  ? "Select a customer first"
+                  ? t("Select a customer first")
                   : customerProfiles.length === 0
-                  ? "No profiles for this customer"
-                  : "Select profile (optional)"}
+                  ? t("No profiles for this customer")
+                  : t("Select profile (optional)")}
               </option>
               {customerProfiles.map((p) => (
                 <option key={p.id} value={p.id}>{p.label}</option>
@@ -168,23 +170,23 @@ export function OrderForm({ garmentTypes }: Props) {
             </Select>
           </Field>
 
-          <Field label="Fabric">
+          <Field label={t("Fabric")}>
             <Input
-              placeholder="e.g. Wool Blend"
+              placeholder={t("e.g. Wool Blend")}
               value={item.fabric}
               onChange={(e) => setItem((prev) => ({ ...prev, fabric: e.target.value }))}
             />
           </Field>
 
-          <Field label="Color">
+          <Field label={t("Color")}>
             <Input
-              placeholder="e.g. Navy"
+              placeholder={t("e.g. Navy")}
               value={item.color}
               onChange={(e) => setItem((prev) => ({ ...prev, color: e.target.value }))}
             />
           </Field>
 
-          <Field label="Quantity *">
+          <Field label={`${t("Quantity")} *`}>
             <Input
               type="number" min={1} placeholder="1"
               value={item.quantity}
@@ -193,7 +195,7 @@ export function OrderForm({ garmentTypes }: Props) {
             />
           </Field>
 
-          <Field label="Unit Price ($) *">
+          <Field label={`${t("Unit Price ($)")} *`}>
             <Input
               type="number" min={0} step="0.01" placeholder="0.00"
               value={item.unitPrice || ""}
@@ -202,10 +204,10 @@ export function OrderForm({ garmentTypes }: Props) {
             />
           </Field>
 
-          <Field label="Tailoring Instructions">
+          <Field label={t("Tailoring Instructions")}>
             <Input
               className="lg:col-span-3"
-              placeholder="Specific instructions for this garment…"
+              placeholder={t("Specific instructions for this garment…")}
               value={item.tailoringInstructions}
               onChange={(e) => setItem((prev) => ({ ...prev, tailoringInstructions: e.target.value }))}
             />
@@ -214,7 +216,7 @@ export function OrderForm({ garmentTypes }: Props) {
       </div>
 
       <Button disabled={isPending} type="submit" className="w-full sm:w-auto">
-        {isPending ? "Creating…" : "Create Order"}
+        {isPending ? t("Creating…") : t("Create Order")}
       </Button>
     </form>
   );

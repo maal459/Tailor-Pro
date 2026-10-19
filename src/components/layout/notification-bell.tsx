@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { NotificationItem } from "@/lib/notifications";
+import { useT } from "@/lib/i18n/client";
 
 type NotificationData = {
   items: NotificationItem[];
@@ -15,6 +16,7 @@ export function NotificationBell() {
   const [data, setData] = useState<NotificationData | null>(null);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const t = useT();
 
   async function refresh() {
     try {
@@ -51,7 +53,7 @@ export function NotificationBell() {
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        aria-label={`${count} notifications`}
+        aria-label={t("{count} notifications", { count })}
         onClick={() => setOpen((value) => !value)}
         className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--card)] transition-colors hover:bg-black/5"
       >
@@ -67,11 +69,11 @@ export function NotificationBell() {
         <div className="absolute right-0 z-30 mt-3 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl shadow-black/10">
           <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
             <div>
-              <p className="text-sm font-semibold">Notifications</p>
-              <p className="text-xs text-[var(--muted)]">{count} unread</p>
+              <p className="text-sm font-semibold">{t("Notifications")}</p>
+              <p className="text-xs text-[var(--muted)]">{t("{count} unread", { count })}</p>
             </div>
             <Link href="/notifications" className="text-xs font-medium text-[var(--primary)]" onClick={() => setOpen(false)}>
-              Open center
+              {t("Open center")}
             </Link>
           </div>
 
@@ -93,13 +95,13 @@ export function NotificationBell() {
                       <p className="text-xs text-[var(--muted)]">{item.description}</p>
                     </div>
                     <span className="rounded-full bg-black/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--muted)]">
-                      {item.type}
+                      {t(item.type)}
                     </span>
                   </div>
                 </Link>
               ))
             ) : (
-              <div className="px-3 py-8 text-center text-sm text-[var(--muted)]">No new notifications.</div>
+              <div className="px-3 py-8 text-center text-sm text-[var(--muted)]">{t("No new notifications.")}</div>
             )}
           </div>
         </div>

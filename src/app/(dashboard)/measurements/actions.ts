@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
+import { getT } from "@/lib/i18n/server";
 
 function parseFields(fieldsText: string) {
   return fieldsText
@@ -27,7 +28,8 @@ export async function createMeasurementProfileAction(formData: FormData) {
   const fieldsText = String(formData.get("fields") ?? "");
 
   if (!customerId || !garmentTypeId || !name) {
-    throw new Error("Customer, garment type, and profile name are required");
+    const t = await getT();
+    throw new Error(t("Customer, garment type, and profile name are required"));
   }
 
   const parsedFields = parseFields(fieldsText);
@@ -59,12 +61,13 @@ export async function updateMeasurementProfileAction(profileId: string, formData
   const notes = String(formData.get("notes") ?? "");
   const garmentTypeId = String(formData.get("garmentTypeId") ?? "");
   const parsedFields = parseFields(String(formData.get("fields") ?? ""));
-  if (!name) throw new Error("Profile name is required");
+  const t = await getT();
+  if (!name) throw new Error(t("Profile name is required"));
 
   const existing = await prisma.measurementProfile.findFirst({
     where: { id: profileId, tenantId: session.tenantId }
   });
-  if (!existing) throw new Error("Measurement profile not found");
+  if (!existing) throw new Error(t("Measurement profile not found"));
 
   await prisma.measurement.deleteMany({
     where: { tenantId: session.tenantId, measurementProfileId: profileId }
@@ -93,7 +96,7 @@ export async function deleteMeasurementProfileAction(profileId: string) {
   const existing = await prisma.measurementProfile.findFirst({
     where: { id: profileId, tenantId: session.tenantId }
   });
-  if (!existing) throw new Error("Measurement profile not found");
+  if (!existing) throw new Error((await getT())("Measurement profile not found"));
 
   await prisma.measurementProfile.deleteMany({
     where: { id: profileId, tenantId: session.tenantId }

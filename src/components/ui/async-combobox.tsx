@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Search, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/client";
 
 export type ComboResult = { id: string; label: string; [key: string]: unknown };
 
@@ -33,6 +34,7 @@ export function AsyncCombobox({
   const [loading, setLoading] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState(initialLabel);
   const ref = useRef<HTMLDivElement>(null);
+  const tr = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -66,7 +68,7 @@ export function AsyncCombobox({
         className="flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 text-sm transition-colors focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20"
       >
         <span className={cn("truncate text-left", selectedLabel ? "text-[var(--text)]" : "text-[var(--muted)]")}>
-          {selectedLabel || placeholder}
+          {selectedLabel || tr(placeholder)}
         </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-[var(--muted)] transition-transform", open && "rotate-180")} />
       </button>
@@ -79,7 +81,7 @@ export function AsyncCombobox({
               <input
                 autoFocus
                 className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] pl-8 pr-3 text-sm outline-none focus:border-[var(--primary)]"
-                placeholder="Type phone or name…"
+                placeholder={tr("Type phone or name…")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -88,11 +90,11 @@ export function AsyncCombobox({
           <div className="max-h-52 overflow-y-auto pb-2">
             {loading ? (
               <p className="flex items-center justify-center gap-2 px-3 py-3 text-sm text-[var(--muted)]">
-                <Loader2 className="h-4 w-4 animate-spin" /> Searching…
+                <Loader2 className="h-4 w-4 animate-spin" /> {tr("Searching…")}
               </p>
             ) : results.length === 0 ? (
               <p className="px-3 py-3 text-center text-sm text-[var(--muted)]">
-                {query ? "No matches" : "Type to search…"}
+                {query ? tr("No matches") : tr("Type to search…")}
               </p>
             ) : (
               results.map((r) => (

@@ -6,20 +6,22 @@ import { createPaymentSchema, updatePaymentSchema } from "@/lib/validators/payme
 import { paymentRepository } from "@/lib/repositories/payment-repository";
 import { financeService } from "@/lib/services/finance-service";
 import { prisma } from "@/lib/db/prisma";
+import { getT } from "@/lib/i18n/server";
 
 export async function createPaymentAction(input: unknown) {
   const session = await requireAuth();
+  const t = await getT();
   const parsed = createPaymentSchema.safeParse(input);
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid payment data");
+    throw new Error(parsed.error.issues[0]?.message ?? t("Invalid payment data"));
   }
 
   const totals = await financeService.orderTotals(session.tenantId, parsed.data.orderId);
-  if (!totals) throw new Error("Order not found");
+  if (!totals) throw new Error(t("Order not found"));
 
   const projectedBalance = totals.balance - parsed.data.amount;
-  if (projectedBalance < -0.01) throw new Error("Overpayment is not allowed for this order");
+  if (projectedBalance < -0.01) throw new Error(t("Overpayment is not allowed for this order"));
 
   await paymentRepository.create({
     tenantId: session.tenantId,
@@ -40,17 +42,18 @@ export async function createPaymentAction(input: unknown) {
 
 export async function updatePaymentAction(paymentId: string, input: unknown) {
   const session = await requireAuth();
+  const t = await getT();
   const parsed = updatePaymentSchema.safeParse(input);
 
   if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid payment data");
+    throw new Error(parsed.error.issues[0]?.message ?? t("Invalid payment data"));
   }
 
   const existing = await prisma.payment.findFirst({
     where: { id: paymentId, tenantId: session.tenantId }
   });
   if (!existing) {
-    throw new Error("Payment not found");
+    throw new Error(t("Payment not found"));
   }
 
   await prisma.payment.updateMany({
@@ -72,12 +75,13 @@ export async function updatePaymentAction(paymentId: string, input: unknown) {
 
 export async function deletePaymentAction(paymentId: string) {
   const session = await requireAuth();
+  const t = await getT();
 
   const existing = await prisma.payment.findFirst({
     where: { id: paymentId, tenantId: session.tenantId }
   });
   if (!existing) {
-    throw new Error("Payment not found");
+    throw new Error(t("Payment not found"));
   }
 
   await prisma.payment.deleteMany({ where: { id: paymentId, tenantId: session.tenantId } });
