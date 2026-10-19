@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createCustomerAction } from "@/app/(dashboard)/customers/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { useToast } from "@/components/ui/toaster";
 export function CustomerForm() {
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -21,6 +23,8 @@ export function CustomerForm() {
         if (result.ok) {
           toast.push("Customer added");
           formRef.current?.reset();
+          // Re-fetch the list so the new row shows even if the action response did not carry it.
+          router.refresh();
         } else {
           toast.push(result.error, "error");
         }
